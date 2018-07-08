@@ -10,7 +10,6 @@ import urllib.request as ur
 import urllib.error as ue
 
 
-
 class CsvParser:
 
     def __init__(self):
@@ -57,6 +56,8 @@ class CsvParser:
         self.cats_to_die = []
         self.rows = []
         self.buffer = []
+        self.buffer2 = []
+        self.buffer3 = []
         self.outlines = []
         self.root = tkinter.Tk()
         self.root.title("Orion export v. 2.0")
@@ -397,14 +398,15 @@ class CsvParser:
         if self.chosen_cats_markup10_group:
             for i in self.chosen_cats_markup10_group:
                 self.chosen_cats_markup_general_group.remove(i)
-
+                print(i)
+            self.chosen_cats_markup10_group = []
         if self.cats_to_die:
 
             for i in self.invited_cats_on_markup:
                 if i not in self.chosen_cats_markup_general_group:
                     choose_cats.insert("end", i)
 
-        else:
+        if not self.cats_to_die:
             self.invited_cats_on_markup = self.sorted_cats
             for i in self.invited_cats_on_markup:
                 if i not in self.chosen_cats_markup_general_group:
@@ -426,8 +428,10 @@ class CsvParser:
         for i in y:
             self.chosen_cats_markup10_group.append(choose_cats.get(i))
         print(self.chosen_cats_markup10_group)
+
         for i in self.chosen_cats_markup10_group:
             self.chosen_cats_markup_general_group.add(i)
+            print("добалено в общее множество " + i)
         available_cats.destroy()
 
 # 9
@@ -474,6 +478,8 @@ class CsvParser:
         if self.chosen_cats_markup9_group:
             for i in self.chosen_cats_markup9_group:
                 self.chosen_cats_markup_general_group.remove(i)
+                print(i)
+            self.chosen_cats_markup9_group = []
 
         if self.cats_to_die:
 
@@ -481,7 +487,7 @@ class CsvParser:
                 if i not in self.chosen_cats_markup_general_group:
                     choose_cats.insert("end", i)
 
-        else:
+        if not self.cats_to_die:
             self.invited_cats_on_markup = self.sorted_cats
             for i in self.invited_cats_on_markup:
                 if i not in self.chosen_cats_markup_general_group:
@@ -503,8 +509,10 @@ class CsvParser:
         for i in y:
             self.chosen_cats_markup9_group.append(choose_cats.get(i))
         print(self.chosen_cats_markup9_group)
+
         for i in self.chosen_cats_markup9_group:
             self.chosen_cats_markup_general_group.add(i)
+            print("добалено в общее множество " + i)
         available_cats.destroy()
 
 # 8
@@ -547,17 +555,18 @@ class CsvParser:
         xbar = tkinter.Scrollbar(available_cats, orient='horizontal', command=choose_cats.xview)
         ybar = tkinter.Scrollbar(available_cats, orient='vertical', command=choose_cats.yview)
         choose_cats.configure(xscrollcommand=xbar.set, yscrollcommand=ybar.set)
+
         if self.chosen_cats_markup8_group:
             for i in self.chosen_cats_markup8_group:
                 self.chosen_cats_markup_general_group.remove(i)
-
+            self.chosen_cats_markup8_group = []
         if self.cats_to_die:
 
             for i in self.invited_cats_on_markup:
                 if i not in self.chosen_cats_markup_general_group:
                     choose_cats.insert("end", i)
 
-        else:
+        if not self.cats_to_die:
             self.invited_cats_on_markup = self.sorted_cats
             for i in self.invited_cats_on_markup:
                 if i not in self.chosen_cats_markup_general_group:
@@ -579,8 +588,10 @@ class CsvParser:
         for i in y:
             self.chosen_cats_markup8_group.append(choose_cats.get(i))
         print(self.chosen_cats_markup8_group)
+
         for i in self.chosen_cats_markup8_group:
             self.chosen_cats_markup_general_group.add(i)
+            print("добалено в общее множество " + i)
         available_cats.destroy()
 
 # 7
@@ -624,23 +635,25 @@ class CsvParser:
         xbar = tkinter.Scrollbar(available_cats, orient='horizontal', command=choose_cats.xview)
         ybar = tkinter.Scrollbar(available_cats, orient='vertical', command=choose_cats.yview)
         choose_cats.configure(xscrollcommand=xbar.set, yscrollcommand=ybar.set)
+
         if self.chosen_cats_markup7_group:
             for i in self.chosen_cats_markup7_group:
                 self.chosen_cats_markup_general_group.remove(i)
-
+                print(i, len(self.chosen_cats_markup_general_group))
+            self.chosen_cats_markup7_group = []
         if self.cats_to_die:
 
             for i in self.invited_cats_on_markup:
                 if i not in self.chosen_cats_markup_general_group:
                     choose_cats.insert("end", i)
 
-        else:
+        if not self.cats_to_die:
             self.invited_cats_on_markup = self.sorted_cats
             for i in self.invited_cats_on_markup:
                 if i not in self.chosen_cats_markup_general_group:
                     choose_cats.insert("end", i)
 
-        ok_button = tkinter.Button(available_cats, text="Ok", command=lambda: self.cats_markup2_ok(choose_cats, available_cats))
+        ok_button = tkinter.Button(available_cats, text="Ok", command=lambda: self.cats_markup7_ok(choose_cats, available_cats))
         abort_button = tkinter.Button(available_cats, text="Отмена", command=available_cats.destroy)
         choose_cats.grid(row=0, column=1, )
         ok_button.grid(row=2, column=0)
@@ -656,8 +669,10 @@ class CsvParser:
         for i in y:
             self.chosen_cats_markup7_group.append(choose_cats.get(i))
         print(self.chosen_cats_markup7_group)
+
         for i in self.chosen_cats_markup7_group:
             self.chosen_cats_markup_general_group.add(i)
+            print("добалено в общее множество " + i)
         available_cats.destroy()
 
 # 6
@@ -701,16 +716,20 @@ class CsvParser:
         xbar = tkinter.Scrollbar(available_cats, orient='horizontal', command=choose_cats.xview)
         ybar = tkinter.Scrollbar(available_cats, orient='vertical', command=choose_cats.yview)
         choose_cats.configure(xscrollcommand=xbar.set, yscrollcommand=ybar.set)
+
         if self.chosen_cats_markup6_group:
             for i in self.chosen_cats_markup6_group:
                 self.chosen_cats_markup_general_group.remove(i)
+                print(i)
+            self.chosen_cats_markup6_group = []
+
         if self.cats_to_die:
 
             for i in self.invited_cats_on_markup:
                 if i not in self.chosen_cats_markup_general_group:
                     choose_cats.insert("end", i)
 
-        else:
+        if not self.cats_to_die:
             self.invited_cats_on_markup = self.sorted_cats
             for i in self.invited_cats_on_markup:
                 if i not in self.chosen_cats_markup_general_group:
@@ -732,8 +751,10 @@ class CsvParser:
         for i in y:
             self.chosen_cats_markup6_group.append(choose_cats.get(i))
         print(self.chosen_cats_markup6_group)
+
         for i in self.chosen_cats_markup6_group:
             self.chosen_cats_markup_general_group.add(i)
+            print("добалено в общее множество " + i)
         available_cats.destroy()
 
 # 5
@@ -776,9 +797,12 @@ class CsvParser:
         xbar = tkinter.Scrollbar(available_cats, orient='horizontal', command=choose_cats.xview)
         ybar = tkinter.Scrollbar(available_cats, orient='vertical', command=choose_cats.yview)
         choose_cats.configure(xscrollcommand=xbar.set, yscrollcommand=ybar.set)
+
         if self.chosen_cats_markup5_group:
             for i in self.chosen_cats_markup5_group:
                 self.chosen_cats_markup_general_group.remove(i)
+                print(i)
+            self.chosen_cats_markup5_group = []
 
         if self.cats_to_die:
 
@@ -786,7 +810,7 @@ class CsvParser:
                 if i not in self.chosen_cats_markup_general_group:
                     choose_cats.insert("end", i)
 
-        else:
+        if not self.cats_to_die:
             self.invited_cats_on_markup = self.sorted_cats
             for i in self.invited_cats_on_markup:
                 if i not in self.chosen_cats_markup_general_group:
@@ -808,8 +832,10 @@ class CsvParser:
         for i in y:
             self.chosen_cats_markup5_group.append(choose_cats.get(i))
         print(self.chosen_cats_markup5_group)
+
         for i in self.chosen_cats_markup5_group:
             self.chosen_cats_markup_general_group.add(i)
+            print("добалено в общее множество " + i)
         available_cats.destroy()
 
 # 4
@@ -852,16 +878,20 @@ class CsvParser:
         xbar = tkinter.Scrollbar(available_cats, orient='horizontal', command=choose_cats.xview)
         ybar = tkinter.Scrollbar(available_cats, orient='vertical', command=choose_cats.yview)
         choose_cats.configure(xscrollcommand=xbar.set, yscrollcommand=ybar.set)
+
         if self.chosen_cats_markup4_group:
             for i in self.chosen_cats_markup4_group:
                 self.chosen_cats_markup_general_group.remove(i)
+                print(i)
+            self.chosen_cats_markup4_group = []
+
         if self.cats_to_die:
 
             for i in self.invited_cats_on_markup:
                 if i not in self.chosen_cats_markup_general_group:
                     choose_cats.insert("end", i)
 
-        else:
+        if not self.cats_to_die:
             self.invited_cats_on_markup = self.sorted_cats
             for i in self.invited_cats_on_markup:
                 if i not in self.chosen_cats_markup_general_group:
@@ -883,8 +913,10 @@ class CsvParser:
         for i in y:
             self.chosen_cats_markup4_group.append(choose_cats.get(i))
         print(self.chosen_cats_markup4_group)
+
         for i in self.chosen_cats_markup4_group:
             self.chosen_cats_markup_general_group.add(i)
+            print("добалено в общее множество " + i)
         available_cats.destroy()
 # 3
 
@@ -917,9 +949,9 @@ class CsvParser:
             angry = tm.showerror(title="Ошибка!", message="Вводимое значение должно быть целым числом, без разделительных знаков.")
 
     def cats_markup3(self):
-        """Дочернее окно выбора категорий товаров, подлежащих применению наценки 2"""
+        """Дочернее окно выбора категорий товаров, подлежащих применению наценки 3"""
         value = tkinter.IntVar()
-        value.set(self.price_markup2)
+        value.set(self.price_markup3)
         available_cats = tkinter.Toplevel(self.root, bd=1)
         available_cats.title("Выберите категории товаров для применения к ним выбранной наценки:")
         available_cats.minsize(width=50, height=50)
@@ -927,22 +959,26 @@ class CsvParser:
         xbar = tkinter.Scrollbar(available_cats, orient='horizontal', command=choose_cats.xview)
         ybar = tkinter.Scrollbar(available_cats, orient='vertical', command=choose_cats.yview)
         choose_cats.configure(xscrollcommand=xbar.set, yscrollcommand=ybar.set)
+
         if self.chosen_cats_markup3_group:
             for i in self.chosen_cats_markup3_group:
                 self.chosen_cats_markup_general_group.remove(i)
-        if self.cats_to_die:
+                print(i)
+            self.chosen_cats_markup3_group = []
 
+        if self.cats_to_die:
+            print("cats to die is TRUE")
             for i in self.invited_cats_on_markup:
                 if i not in self.chosen_cats_markup_general_group:
                     choose_cats.insert("end", i)
 
-        else:
+        if not self.cats_to_die:
             self.invited_cats_on_markup = self.sorted_cats
             for i in self.invited_cats_on_markup:
                 if i not in self.chosen_cats_markup_general_group:
                     choose_cats.insert("end", i)
 
-        ok_button = tkinter.Button(available_cats, text="Ok", command=lambda: self.cats_markup2_ok(choose_cats, available_cats))
+        ok_button = tkinter.Button(available_cats, text="Ok", command=lambda: self.cats_markup3_ok(choose_cats, available_cats))
         abort_button = tkinter.Button(available_cats, text="Отмена", command=available_cats.destroy)
         choose_cats.grid(row=0, column=1, )
         ok_button.grid(row=2, column=0)
@@ -958,7 +994,9 @@ class CsvParser:
         for i in y:
             self.chosen_cats_markup3_group.append(choose_cats.get(i))
         print(self.chosen_cats_markup3_group)
+
         for i in self.chosen_cats_markup3_group:
+            print("добалено в общее множество " + i)
             self.chosen_cats_markup_general_group.add(i)
         available_cats.destroy()
 
@@ -1003,16 +1041,20 @@ class CsvParser:
         xbar = tkinter.Scrollbar(available_cats, orient='horizontal', command=choose_cats.xview)
         ybar = tkinter.Scrollbar(available_cats, orient='vertical', command=choose_cats.yview)
         choose_cats.configure(xscrollcommand=xbar.set, yscrollcommand=ybar.set)
+
         if self.chosen_cats_markup2_group:
             for i in self.chosen_cats_markup2_group:
                 self.chosen_cats_markup_general_group.remove(i)
+                print(i)
+            self.chosen_cats_markup2_group = []
+
         if self.cats_to_die:
 
             for i in self.invited_cats_on_markup:
                 if i not in self.chosen_cats_markup_general_group:
                     choose_cats.insert("end", i)
 
-        else:
+        if not self.cats_to_die:
             self.invited_cats_on_markup = self.sorted_cats
             for i in self.invited_cats_on_markup:
                 if i not in self.chosen_cats_markup_general_group:
@@ -1034,7 +1076,9 @@ class CsvParser:
         for i in y:
             self.chosen_cats_markup2_group.append(choose_cats.get(i))
         print(self.chosen_cats_markup2_group)
+
         for i in self.chosen_cats_markup2_group:
+            print("добалено в общее множество " + i)
             self.chosen_cats_markup_general_group.add(i)
         available_cats.destroy()
 # 1
@@ -1078,9 +1122,12 @@ class CsvParser:
         xbar = tkinter.Scrollbar(available_cats, orient='horizontal', command=choose_cats.xview)
         ybar = tkinter.Scrollbar(available_cats, orient='vertical', command=choose_cats.yview)
         choose_cats.configure(xscrollcommand=xbar.set, yscrollcommand=ybar.set)
+
         if self.chosen_cats_markup1_group:
             for i in self.chosen_cats_markup1_group:
                 self.chosen_cats_markup_general_group.remove(i)
+                print(i)
+            self.chosen_cats_markup1_group = []
 
         if self.cats_to_die:
 
@@ -1088,7 +1135,7 @@ class CsvParser:
                 if i not in self.chosen_cats_markup_general_group:
                     choose_cats.insert("end", i)
 
-        else:
+        if not self.cats_to_die:
             self.invited_cats_on_markup = self.sorted_cats
             for i in self.invited_cats_on_markup:
                 if i not in self.chosen_cats_markup_general_group:
@@ -1110,7 +1157,9 @@ class CsvParser:
         for i in y:
             self.chosen_cats_markup1_group.append(choose_cats.get(i))
         print(self.chosen_cats_markup1_group)
+
         for i in self.chosen_cats_markup1_group:
+            print("добалено в общее множество " + i)
             self.chosen_cats_markup_general_group.add(i)
 
         available_cats.destroy()
@@ -1147,7 +1196,7 @@ class CsvParser:
 
                 if self.sorted_cats[i]:
                     self.cats_to_die.append(self.sorted_cats[i])
-
+        print("кошки на смерть" + str(self.cats_to_die))
         for i in self.sorted_cats:
             if i not in self.cats_to_die:
                 self.invited_cats_on_markup.append(i)
@@ -1165,12 +1214,12 @@ class CsvParser:
        except FileNotFoundError:
            pass
 
-       try:
-           with open("deletecat.dat", 'rb') as file4:
-               self.cats_to_die = pickle.load(file4)
+       # try:
+           # with open("deletecat.dat", 'rb') as file4:
+               # self.cats_to_die = pickle.load(file4)
 
-       except FileNotFoundError:
-           pass
+       # except FileNotFoundError:
+           # pass
 
        try:
             with open("concourse.dat", 'rb') as file:
@@ -1351,33 +1400,35 @@ class CsvParser:
             for line in self.buffer:
                 if line['category_path'] not in self.cats_to_die:
 
-                    self.rows.append(line)
+                    self.buffer2.append(line)
 
-        elif not self.cats_to_die:
+        # elif not self.cats_to_die:
+        else:
             for line in self.buffer:
-                self.rows.append(line)
+                self.buffer2.append(line)
         self.buffer = []
         self.serpentis()
 
     def serpentis(self):
-        if self.rows:
+        if self.buffer2:
 
-            for row in self.rows:
+            for row in self.buffer2:
 
                 if row['special_price_flag'] == 'X':
 
                     product_price = float(row['product_price'])
                     row['product_price'] = float(round(product_price * self.convertation_cource))
 
-                elif row['special_price_flag'] != 'X':
-
+                # elif row['special_price_flag'] != 'X':
+                else:
                     product_price = float(row['product_price'])
                     row['product_price'] = float(round(product_price / 2 * self.convertation_cource))
-
+                self.buffer3.append(row)
+            self.buffer2 = []
         self.serpentis_iter2()
 
     def serpentis_iter2(self):
-            for row in self.rows:
+            for row in self.buffer3:
 
                 if self.price_markup1:
                     if row['category_path'] in self.chosen_cats_markup1_group:
@@ -1419,7 +1470,8 @@ class CsvParser:
                     if row['category_path'] in self.chosen_cats_markup10_group:
                         markuped_price10 = float(row['product_price'])
                         row['product_price'] = float(round(markuped_price10 + self.price_markup10 * markuped_price10 / 100))
-
+                self.rows.append(row)
+            self.buffer3 = []
             self.serpentis_iter3()
 
     def serpentis_iter3(self):
@@ -1465,7 +1517,7 @@ class CsvParser:
                 row['uuid : UUID Товара'] = ''
                 row['uuid_mod : UUID Модификации'] = ''
                 self.outlines.append(row)
-
+            self.rows = []
             self.writer()
 
     def writer(self):
