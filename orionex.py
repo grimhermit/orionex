@@ -9,6 +9,7 @@ import pickle
 import urllib.request as ur
 import urllib.error as ue
 import os
+import pandas
 
 
 class CsvParser:
@@ -43,12 +44,23 @@ class CsvParser:
                              'detailed_full_text_en': 'body : Описание', 'novelty_flag': 'new : Новинка',
                              'product_price': 'price : Цена'}
 
+        # Количество хранимых в бинарниках данных увеличилось, было бы здорово хранить их в отдельном каталоге
+        self.osdir = os.getcwd()
+        self.data_dir_name = "Data"
+        self.input_dir_name = "Input"
+        # Логический атрибут, значение которого будет менятся в зависимости от наличия файла соответсвия кодов групп
+        # Это наш триггер
+        self.xlsx_bool = False
+        self.xlsx_list = []
+        self.xlsx_id = set()
+        # пользователь составил список категорий, с которыми обычно работает, в виду данного обстоятельства
+        # реорганизуем процесс отбора категорий
         # атрибут хранит ссылку
         self.hyperlink = str('')
         self.csv_path = str('')
         self.csvfile_name = str('result.csv')
         self.convertation_cource = float(0)
-        self.output = str()
+        self.output = str(self.osdir + '/')
         self.out = ""
         self.cats = []
         self.sorted_cats = []
@@ -212,10 +224,7 @@ class CsvParser:
                                                                                                    self.label_set_price_markup10))
         # Текст справки перемещен внутрь основного окна по желанию пользователя
         self.help = ts.ScrolledText(self.frame5)
-        # Количество хранимых в бинарниках данных увеличилось, было бы здорово хранить их в отдельном каталоге
-        self.osdir = os.getcwd()
-        self.data_dir_name = "Data"
-        self.input_dir_name = "Input"
+
 
     def download_file(self):
 
@@ -257,7 +266,8 @@ class CsvParser:
             self.label_download_stat.config(text="Файл прочитан, можно удалять категории.")
         except FileNotFoundError:
             error = tm.showerror(title="Ошибка!",
-                                 message="Скачанный файл отсутсвует, либо загрузился в нечитаемом виде, повторите загрузку.")
+                                 message="Скачанный файл отсутсвует, "
+                                         "либо загрузился в нечитаемом виде, повторите загрузку.")
 
     def set_hyperlink(self):
         val = tkinter.StringVar()
@@ -284,9 +294,9 @@ class CsvParser:
 
     def draw_me(self):
         """размещение и отображение элементов графического интерфейса главного окна"""
-        #alpha_frame:
+        # alpha_frame:
         self.alpha_frame.pack(side="left")
-        #omega_frame
+        # omega_frame
         self.omega_frame.pack(side="left", expand=1, fill="both")
         # frame 1
         self.frame1.pack()
@@ -464,63 +474,11 @@ class CsvParser:
                     pickle.dump(markup, file)
 
         except tkinter.TclError:
-            angry = tm.showerror(title="Ошибка!", message="Вводимое значение должно быть целым числом, без разделительных знаков.")
-
-    # попытка оптимизировать прогу, написав пару тройку универсальных фуекций.
-    # Фишка в том, что мы используем везде практически одно и то же дочернее окно
-    # для начала сделаем так, чтобы форма рисовалась одной функцией для разных триггеров.
-    def markups_util_form(self, any_list):
-        value = tkinter.IntVar()
-        value.set(any_list)
-        available_cats = tkinter.Toplevel(self.root, bd=1)
-        available_cats.title("Выберите категории товаров для применения к ним выбранной наценки:")
-        available_cats.minsize(width=50, height=50)
-        choose_cats = tkinter.Listbox(available_cats, selectmode="multiple", width=50, height=30)
-        xbar = tkinter.Scrollbar(available_cats, orient='horizontal', command=choose_cats.xview)
-        ybar = tkinter.Scrollbar(available_cats, orient='vertical', command=choose_cats.yview)
-        choose_cats.configure(xscrollcommand=xbar.set, yscrollcommand=ybar.set)
-
-        if any_list:
-            for i in any_list:
-                self.chosen_cats_markup_general_group.remove(i)
-
-            any_list = []
-        if self.cats_to_die:
-
-            for i in self.invited_cats_on_markup:
-                if i not in self.chosen_cats_markup_general_group.remove(i):
-                    choose_cats.insert("end", i)
-
-        if not self.cats_to_die:
-            self.invited_cats_on_markup = self.sorted_cats
-            for i in self.invited_cats_on_markup:
-                if i not in self.chosen_cats_markup_general_group:
-                    choose_cats.insert("end", i)
-
-        ok_button = tkinter.Button(available_cats, text="Ok",
-                                   command=lambda: self.markup_util_ok(choose_cats, available_cats, any_list))
-        abort_button = tkinter.Button(available_cats, text="Отмена", command=available_cats.destroy)
-        choose_cats.grid(row=0, column=1, )
-        ok_button.grid(row=2, column=0)
-        abort_button.grid(row=2, column=4)
-        xbar.grid(row=1, column=1, rowspan=1, sticky="we")
-        ybar.grid(row=0, column=3, columnspan=1, sticky="ns")
-
-    def markup_util_ok(self, choose_cats, available_cats, any_list):
-        """Функция формирует список индексов категорий товаров, выбранных для применения наценки 10"""
-        y = choose_cats.curselection()
-        any_list = []
-
-        for i in y:
-            any_list.append(choose_cats.get(i))
-
-        for i in any_list:
-            self.chosen_cats_markup_general_group.add(i)
-
-        available_cats.destroy()
+            angry = tm.showerror(title="Ошибка!", message="Вводимое значение должно быть целым числом, "
+                                                          "без разделительных знаков.")
 
     def cats_markup_util(self, any_list):
-        """Дочернее окно выбора категорий товаров, подлежащих применению наценки 10"""
+        """Дочернее окно выбора категорий товаров, подлежащих применению наценки"""
         value = tkinter.IntVar()
         value.set(any_list)
         available_cats = tkinter.Toplevel(self.root, bd=1)
@@ -557,7 +515,7 @@ class CsvParser:
         ybar.grid(row=0, column=3, columnspan=1, sticky="ns")
 
     def cats_markup_util_ok(self, choose_cats, available_cats, any_list):
-        """Функция формирует список индексов категорий товаров, выбранных для применения наценки 10"""
+        """Функция формирует список индексов категорий товаров, выбранных для применения наценки"""
         y = choose_cats.curselection()
         any_list = []
 
@@ -571,30 +529,35 @@ class CsvParser:
 
     def cats_catcher(self):
         """Дочернее окно выбора категорий товаров, подлежащих удалению"""
-        value = tkinter.DoubleVar()
-        value.set(self.convertation_cource)
-        available_cats = tkinter.Toplevel(self.root, bd=1)
-        available_cats.title("Выберите лишние категории товаров:")
-        available_cats.minsize(width=50, height=50)
-        choose_cats = tkinter.Listbox(available_cats, selectmode="multiple", width=50, height=30)
-        xbar = tkinter.Scrollbar(available_cats, orient='horizontal', command=choose_cats.xview)
-        ybar = tkinter.Scrollbar(available_cats, orient='vertical', command=choose_cats.yview)
-        choose_cats.configure(xscrollcommand=xbar.set, yscrollcommand=ybar.set)
-        if self.cats_to_die:
-            self.cats_to_die = []
-        if self.invited_cats_on_markup:
-            self.invited_cats_on_markup = set()
-        for i in self.sorted_cats:
-            if i not in self.cats_to_die:
-                choose_cats.insert("end", i)
+        if self.xlsx_bool:
+            angry = tm.showerror(title="Внимание!",
+                                 message="В папке с исполняемым файлом обнаружен файл соответствия групп товаров, "
+                                         "возможность удалять категори вручную отключена.")
+        else:
+            value = tkinter.DoubleVar()
+            value.set(self.convertation_cource)
+            available_cats = tkinter.Toplevel(self.root, bd=1)
+            available_cats.title("Выберите лишние категории товаров:")
+            available_cats.minsize(width=50, height=50)
+            choose_cats = tkinter.Listbox(available_cats, selectmode="multiple", width=50, height=30)
+            xbar = tkinter.Scrollbar(available_cats, orient='horizontal', command=choose_cats.xview)
+            ybar = tkinter.Scrollbar(available_cats, orient='vertical', command=choose_cats.yview)
+            choose_cats.configure(xscrollcommand=xbar.set, yscrollcommand=ybar.set)
+            if self.cats_to_die:
+                self.cats_to_die = []
+            if self.invited_cats_on_markup:
+                self.invited_cats_on_markup = set()
+            for i in self.sorted_cats:
+                if i not in self.cats_to_die:
+                    choose_cats.insert("end", i)
 
-        ok_button = tkinter.Button(available_cats, text="Ok", command=lambda: self.cats_hanging(choose_cats, available_cats))
-        abort_button = tkinter.Button(available_cats, text="Отмена", command=available_cats.destroy)
-        choose_cats.grid(row=0, column=1, )
-        ok_button.grid(row=2, column=0)
-        abort_button.grid(row=2, column=4)
-        xbar.grid(row=1, column=1, rowspan=1, sticky="we")
-        ybar.grid(row=0, column=3, columnspan=1, sticky="ns")
+            ok_button = tkinter.Button(available_cats, text="Ok", command=lambda: self.cats_hanging(choose_cats, available_cats))
+            abort_button = tkinter.Button(available_cats, text="Отмена", command=available_cats.destroy)
+            choose_cats.grid(row=0, column=1, )
+            ok_button.grid(row=2, column=0)
+            abort_button.grid(row=2, column=4)
+            xbar.grid(row=1, column=1, rowspan=1, sticky="we")
+            ybar.grid(row=0, column=3, columnspan=1, sticky="ns")
 
     def cats_hanging(self, choose_cats, available_cats):
         """Функция формирует список индексов выбранных для удаления категорий товаров"""
@@ -790,10 +753,29 @@ class CsvParser:
                 anger = tm.showerror(title="Ошибка!",
                                      message="Прочитанный файл возможно ошибочен и не соответствует требуемой структуре данных."
                                                               "\n Удостоверьтесь, что входной файл корректен.")
-
         self.sorted_cats = list(set(self.cats))
-
         self.sorted_cats_id = list(set(self.cats_id))
+        if self.xlsx_bool:
+            csv.register_dialect('g_c_c', delimiter=",", quoting=csv.QUOTE_NONE)
+            xlsx_csv_path = str(self.osdir + "/" + self.data_dir_name + "/" + 'group_codes_correspondence.csv')
+            with open(xlsx_csv_path, 'r', encoding='utf-8', newline='') as file2:
+                reader2 = csv.DictReader(file2, dialect='g_c_c', skipinitialspace=True)
+
+                for line in reader2:
+                    if line['name']:
+                        self.xlsx_list.append(line)
+                        self.xlsx_id.add(line['orn'])
+            other = set()
+            another_other = set()
+
+            for line in self.buffer:
+                if line['category'] not in self.xlsx_id:
+
+                    other.add(line['category_path'])
+                else:
+                    another_other.add(line['category_path'])
+            self.cats_to_die = list(other)
+            self.invited_cats_on_markup = another_other
 
     def buffer_handler(self):
         if self.cats_to_die:
@@ -872,6 +854,27 @@ class CsvParser:
             self.serpentis_iter3()
 
     def serpentis_iter3(self):
+            if self.xlsx_bool:
+                self.keys_to_kill = ['export_version', 'current_version', 'timestamp', 'product_class',
+                                     'product_name_DE',
+                                     'title_DE', 'title_EN', 'title_IT', 'product_keyword', 'special_price_flag',
+                                     'recommended_selling_price', 'full_text_DE', 'full_text_IT',
+                                     'category_path', 'group_product', 'single_image', 'tax_id', 'ean_code',
+                                     'battery_supply', 'battery_combination', 'product_image_2', 'product_image_3',
+                                     'product_image_4',
+                                     'material_description', 'material_thickness', 'total_length', 'diameter', 'weight',
+                                     'length',
+                                     'width', 'height', 'contents', 'availability', 'delivery_week', 'dress_size',
+                                     'shoe_size',
+                                     'main_color', 'color_description', 'battery_type', 'packaging_size', 'aroma',
+                                     'isbn', 'number_of_pages',
+                                     'total_duration', 'hardcore_flag', 'age_rating', 'product_languages',
+                                     'country_of_origin_code',
+                                     'series_name', 'reference_quantity', 'reference_price_factor',
+                                     'promotional_packing', 'product_icons',
+                                     'selling_unit', 'voc_percentage', 'barcode', 'barcode_type',
+                                     'food_information_flag',
+                                     'detailed_full_text_de', 'detailed_full_text_en', 'group_id', 'tariff_number']
             for row in self.rows:
                 for i in self.keys_to_kill:
                     if i in row.keys():
@@ -884,7 +887,14 @@ class CsvParser:
                 row['pre_order : Предзаказ'] = 0
                 row['article : Артикул'] = row.pop('product_id')
                 row['code_1c : 1C'] = ''
-                row['folder : Категория'] = ''
+                if self.xlsx_bool:
+                    if row['category'] in self.xlsx_id:
+                        for n in self.xlsx_list:
+                            if n['orn'] == row['category']:
+                                row['folder : Категория'] = n['descr']
+                        row.pop('category')
+                else:
+                    row['folder : Категория'] = ''
                 row['tags : Теги'] = ''
                 row['hidden : Скрыто'] = 0
                 row['kind_id : ID'] = ''
@@ -940,7 +950,7 @@ class CsvParser:
             self.final_msg = tm.showinfo(title="Готово.", message=("Результат обработки сохранен в  " + self.output))
 
     def check_dirs(self):
-        """функция призвана создавать список каталогов, для хранения служебных данных, относительно текущего каталога,
+        """метод призван создавать список каталогов, для хранения служебных данных, относительно текущего каталога,
         в котором выполняется"""
         if not os.path.isdir(str(self.osdir) + self.data_dir_name):
             try:
@@ -953,11 +963,18 @@ class CsvParser:
             except FileExistsError:
                 pass
 
+    def xlsx_to_csv(self):
+        if os.path.isfile(str(self.osdir) + "/" + "соответствие кодов групп.xlsx"):
+            self.xlsx_bool = True
+            print(self.xlsx_bool)
+            xlsx_file = pandas.read_excel('соответствие кодов групп.xlsx', sheet_name="Лист1")
+            xlsx_file.to_csv(str(self.osdir + "/" + self.data_dir_name + "/" + 'group_codes_correspondence.csv'),
+                             index=False)
+
 
 snake = CsvParser()
 snake.check_dirs()
+snake.xlsx_to_csv()
 snake.set_last_params()
 snake.draw_me()
-
-
 
