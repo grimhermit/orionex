@@ -9,7 +9,7 @@ import pickle
 import urllib.request as ur
 import urllib.error as ue
 import os
-import pandas
+from pandas import read_excel
 
 
 class CsvParser:
@@ -967,7 +967,7 @@ class CsvParser:
         if os.path.isfile(str(self.osdir) + "/" + "соответствие кодов групп.xlsx"):
             self.xlsx_bool = True
             print(self.xlsx_bool)
-            xlsx_file = pandas.read_excel('соответствие кодов групп.xlsx', sheet_name="Лист1")
+            xlsx_file = read_excel('соответствие кодов групп.xlsx', sheet_name="Лист1")
             xlsx_file.to_csv(str(self.osdir + "/" + self.data_dir_name + "/" + 'group_codes_correspondence.csv'),
                              index=False)
 
