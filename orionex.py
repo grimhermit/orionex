@@ -9,7 +9,7 @@ import pickle
 import urllib.request as ur
 import urllib.error as ue
 import os
-from pandas import read_excel
+import xlrd
 
 
 class CsvParser:
@@ -967,9 +967,13 @@ class CsvParser:
         if os.path.isfile(str(self.osdir) + "/" + "соответствие кодов групп.xlsx"):
             self.xlsx_bool = True
             print(self.xlsx_bool)
-            xlsx_file = read_excel('соответствие кодов групп.xlsx', sheet_name="Лист1")
-            xlsx_file.to_csv(str(self.osdir + "/" + self.data_dir_name + "/" + 'group_codes_correspondence.csv'),
-                             index=False)
+            xlsx_workbook = xlrd.open_workbook('соответствие кодов групп.xlsx')
+            xlsx_file = xlsx_workbook.sheet_by_name('Лист1')
+            g_c_c_path = str(self.osdir + "/" + self.data_dir_name + "/" + 'group_codes_correspondence.csv')
+            with open(g_c_c_path, 'w', encoding='utf8', newline='') as file:
+                writer = csv.writer(file, quoting=csv.QUOTE_NONE, escapechar='\\')
+                for rownum in range(xlsx_file.nrows):
+                    writer.writerow(xlsx_file.row_values(rownum))
 
 
 snake = CsvParser()
