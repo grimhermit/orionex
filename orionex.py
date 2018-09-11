@@ -9,6 +9,7 @@ import pickle
 import urllib.request as ur
 import urllib.error as ue
 import os
+import xlrd
 
 
 class CsvParser:
@@ -43,12 +44,23 @@ class CsvParser:
                              'detailed_full_text_en': 'body : Описание', 'novelty_flag': 'new : Новинка',
                              'product_price': 'price : Цена'}
 
+        # Количество хранимых в бинарниках данных увеличилось, было бы здорово хранить их в отдельном каталоге
+        self.osdir = os.getcwd()
+        self.data_dir_name = "Data"
+        self.input_dir_name = "Input"
+        # Логический атрибут, значение которого будет менятся в зависимости от наличия файла соответсвия кодов групп
+        # Это наш триггер
+        self.xlsx_bool = False
+        self.xlsx_list = []
+        self.xlsx_id = set()
+        # пользователь составил список категорий, с которыми обычно работает, в виду данного обстоятельства
+        # реорганизуем процесс отбора категорий
         # атрибут хранит ссылку
         self.hyperlink = str('')
         self.csv_path = str('')
         self.csvfile_name = str('result.csv')
         self.convertation_cource = float(0)
-        self.output = str()
+        self.output = str(self.osdir + '/')
         self.out = ""
         self.cats = []
         self.sorted_cats = []
@@ -131,59 +143,88 @@ class CsvParser:
         # self.label_price_markup = tkinter.Label(self.frame3, text="Работа с наценками:")
         self.label_set_price_markup1 = tkinter.Label(self.frame3, text=("Наценка 1 = " + str(self.price_markup1) + "%"))
         self.label_choose_cats_to_markup1 = tkinter.Label(self.frame3, text="Категории товаров для наценки 1:")
-        self.button_price_markup1 = tkinter.Button(self.frame3, text="Выбрать.", command=self.cats_markup1)
-        self.button_set_price_markup1 = tkinter.Button(self.frame3, text="Изменить.", command=self.set_price_markup1)
+        self.button_price_markup1 = tkinter.Button(self.frame3,
+                                                   text="Выбрать.",
+                                                   command=lambda: self.cats_markup_util(self.chosen_cats_markup1_group))
+        self.button_set_price_markup1 = tkinter.Button(self.frame3, text="Изменить.",
+                                                       command=lambda: self.set_price_markup_util(self.price_markup1,
+                                                                                                  self.label_set_price_markup1))
 
         self.label_set_price_markup2 = tkinter.Label(self.frame3, text=("Наценка 2 = " + str(self.price_markup2) + "%"))
         self.label_choose_cats_to_markup2 = tkinter.Label(self.frame3, text="Категории товаров для наценки 2:")
-        self.button_price_markup2 = tkinter.Button(self.frame3, text="Выбрать.", command=self.cats_markup2)
-        self.button_set_price_markup2 = tkinter.Button(self.frame3, text="Изменить.", command=self.set_price_markup2)
+        self.button_price_markup2 = tkinter.Button(self.frame3, text="Выбрать.",
+                                                   command=lambda: self.cats_markup_util(self.chosen_cats_markup2_group))
+        self.button_set_price_markup2 = tkinter.Button(self.frame3, text="Изменить.",
+                                                       command=lambda: self.set_price_markup_util(self.price_markup2,
+                                                                                                  self.label_set_price_markup2))
 
         self.label_set_price_markup3 = tkinter.Label(self.frame3, text=("Наценка 3 = " + str(self.price_markup3) + "%"))
         self.label_choose_cats_to_markup3 = tkinter.Label(self.frame3, text="Категории товаров для наценки 3:")
-        self.button_price_markup3 = tkinter.Button(self.frame3, text="Выбрать.", command=self.cats_markup3)
-        self.button_set_price_markup3 = tkinter.Button(self.frame3, text="Изменить.", command=self.set_price_markup3)
+        self.button_price_markup3 = tkinter.Button(self.frame3, text="Выбрать.",
+                                                   command=lambda: self.cats_markup_util(self.chosen_cats_markup3_group))
+        self.button_set_price_markup3 = tkinter.Button(self.frame3, text="Изменить.",
+                                                       command=lambda: self.set_price_markup_util(self.price_markup3,
+                                                                                                  self.label_set_price_markup3))
 
         self.label_set_price_markup4 = tkinter.Label(self.frame3, text=("Наценка 4 = " + str(self.price_markup4) + "%"))
         self.label_choose_cats_to_markup4 = tkinter.Label(self.frame3, text="Категории товаров для наценки 4:")
-        self.button_price_markup4 = tkinter.Button(self.frame3, text="Выбрать.", command=self.cats_markup4)
-        self.button_set_price_markup4 = tkinter.Button(self.frame3, text="Изменить.", command=self.set_price_markup4)
+        self.button_price_markup4 = tkinter.Button(self.frame3, text="Выбрать.",
+                                                   command=lambda: self.cats_markup_util(self.chosen_cats_markup4_group))
+        self.button_set_price_markup4 = tkinter.Button(self.frame3, text="Изменить.",
+                                                       command=lambda: self.set_price_markup_util(self.price_markup4,
+                                                                                                  self.label_set_price_markup4))
 
         self.label_set_price_markup5 = tkinter.Label(self.frame3, text=("Наценка 5 = " + str(self.price_markup5) + "%"))
         self.label_choose_cats_to_markup5 = tkinter.Label(self.frame3, text="Категории товаров для наценки 5:")
-        self.button_price_markup5 = tkinter.Button(self.frame3, text="Выбрать.", command=self.cats_markup5)
-        self.button_set_price_markup5 = tkinter.Button(self.frame3, text="Изменить.", command=self.set_price_markup5)
+        self.button_price_markup5 = tkinter.Button(self.frame3, text="Выбрать.",
+                                                   command=lambda: self.cats_markup_util(self.chosen_cats_markup5_group))
+        self.button_set_price_markup5 = tkinter.Button(self.frame3, text="Изменить.",
+                                                       command=lambda: self.set_price_markup_util(self.price_markup5,
+                                                                                                  self.label_set_price_markup5))
 
         self.label_set_price_markup6 = tkinter.Label(self.frame3, text=("Наценка 6 = " + str(self.price_markup6) + "%"))
         self.label_choose_cats_to_markup6 = tkinter.Label(self.frame3, text="Категории товаров для наценки 6:")
-        self.button_price_markup6 = tkinter.Button(self.frame3, text="Выбрать.", command=self.cats_markup6)
-        self.button_set_price_markup6 = tkinter.Button(self.frame3, text="Изменить.", command=self.set_price_markup6)
+        self.button_price_markup6 = tkinter.Button(self.frame3, text="Выбрать.",
+                                                   command=lambda: self.cats_markup_util(self.chosen_cats_markup6_group))
+        self.button_set_price_markup6 = tkinter.Button(self.frame3, text="Изменить.",
+                                                       command=lambda: self.set_price_markup_util(self.price_markup6,
+                                                                                                  self.label_set_price_markup6))
 
         self.label_set_price_markup7 = tkinter.Label(self.frame3, text=("Наценка 7 = " + str(self.price_markup7) + "%"))
         self.label_choose_cats_to_markup7 = tkinter.Label(self.frame3, text="Категории товаров для наценки 7:")
-        self.button_price_markup7 = tkinter.Button(self.frame3, text="Выбрать.", command=self.cats_markup7)
-        self.button_set_price_markup7 = tkinter.Button(self.frame3, text="Изменить.", command=self.set_price_markup7)
+        self.button_price_markup7 = tkinter.Button(self.frame3, text="Выбрать.",
+                                                   command=lambda: self.cats_markup_util(self.chosen_cats_markup7_group))
+        self.button_set_price_markup7 = tkinter.Button(self.frame3, text="Изменить.",
+                                                       command=lambda: self.set_price_markup_util(self.price_markup7,
+                                                                                                  self.label_set_price_markup7))
 
         self.label_set_price_markup8 = tkinter.Label(self.frame3, text=("Наценка 8 = " + str(self.price_markup8) + "%"))
         self.label_choose_cats_to_markup8 = tkinter.Label(self.frame3, text="Категории товаров для наценки 8:")
-        self.button_price_markup8 = tkinter.Button(self.frame3, text="Выбрать.", command=self.cats_markup8)
-        self.button_set_price_markup8 = tkinter.Button(self.frame3, text="Изменить.", command=self.set_price_markup8)
+        self.button_price_markup8 = tkinter.Button(self.frame3, text="Выбрать.",
+                                                   command=lambda: self.cats_markup_util(self.chosen_cats_markup8_group))
+        self.button_set_price_markup8 = tkinter.Button(self.frame3, text="Изменить.",
+                                                       command=lambda: self.set_price_markup_util(self.price_markup8,
+                                                                                                  self.label_set_price_markup8))
 
         self.label_set_price_markup9 = tkinter.Label(self.frame3, text=("Наценка 9 = " + str(self.price_markup9) + "%"))
         self.label_choose_cats_to_markup9 = tkinter.Label(self.frame3, text="Категории товаров для наценки 9:")
-        self.button_price_markup9 = tkinter.Button(self.frame3, text="Выбрать.", command=self.cats_markup9)
-        self.button_set_price_markup9 = tkinter.Button(self.frame3, text="Изменить.", command=self.set_price_markup9)
+        self.button_price_markup9 = tkinter.Button(self.frame3, text="Выбрать.",
+                                                   command=lambda: self.cats_markup_util(self.chosen_cats_markup9_group))
+        self.button_set_price_markup9 = tkinter.Button(self.frame3, text="Изменить.",
+                                                       command=lambda: self.set_price_markup_util(self.price_markup9,
+                                                                                                  self.label_set_price_markup9))
 
         self.label_set_price_markup10 = tkinter.Label(self.frame3, text=("Наценка 10 = " + str(self.price_markup10) + "%"))
         self.label_choose_cats_to_markup10 = tkinter.Label(self.frame3, text="Категории товаров для наценки 10:")
-        self.button_price_markup10 = tkinter.Button(self.frame3, text="Выбрать.", command=self.cats_markup10)
-        self.button_set_price_markup10 = tkinter.Button(self.frame3, text="Изменить.", command=self.set_price_markup10)
+        self.button_price_markup10 = tkinter.Button(self.frame3,
+                                                    text="Выбрать.",
+                                                    command=lambda: self.cats_markup_util(self.chosen_cats_markup10_group))
+        self.button_set_price_markup10 = tkinter.Button(self.frame3, text="Изменить.",
+                                                        command=lambda: self.set_price_markup_util(self.price_markup10,
+                                                                                                   self.label_set_price_markup10))
         # Текст справки перемещен внутрь основного окна по желанию пользователя
         self.help = ts.ScrolledText(self.frame5)
-        # Количество хранимых в бинарниках данных увеличилось, было бы здорово хранить их в отдельном каталоге
-        self.osdir = os.getcwd()
-        self.data_dir_name = "Data"
-        self.input_dir_name = "Input"
+
 
     def download_file(self):
 
@@ -225,7 +266,8 @@ class CsvParser:
             self.label_download_stat.config(text="Файл прочитан, можно удалять категории.")
         except FileNotFoundError:
             error = tm.showerror(title="Ошибка!",
-                                 message="Скачанный файл отсутсвует, либо загрузился в нечитаемом виде, повторите загрузку.")
+                                 message="Скачанный файл отсутсвует, "
+                                         "либо загрузился в нечитаемом виде, повторите загрузку.")
 
     def set_hyperlink(self):
         val = tkinter.StringVar()
@@ -250,12 +292,11 @@ class CsvParser:
             pickle.dump(self.hyperlink, file)
         new_hyperlink.destroy()
 
-
     def draw_me(self):
         """размещение и отображение элементов графического интерфейса главного окна"""
-        #alpha_frame:
+        # alpha_frame:
         self.alpha_frame.pack(side="left")
-        #omega_frame
+        # omega_frame
         self.omega_frame.pack(side="left", expand=1, fill="both")
         # frame 1
         self.frame1.pack()
@@ -284,7 +325,6 @@ class CsvParser:
         # новые элементы ГУИ
         # Frame 3
         self.frame3.pack()
-        # self.label_price_markup.grid(row=8, column=1)
         self.label_set_price_markup1.grid(row=9, column=3)
         self.label_choose_cats_to_markup1.grid(row=9, column=0)
         self.button_price_markup1.grid(row=9, column=1)
@@ -370,747 +410,77 @@ class CsvParser:
         # Loop
         self.root.mainloop()
 
-# 10
-    def set_price_markup10(self):
-        """Дочернее окно изменения наценки 10"""
-        value10 = tkinter.IntVar()
-        value10.set(self.price_markup10)
+    def set_price_markup_util(self, markup, label):
+        """Дочернее окно изменения наценки"""
+        value = tkinter.IntVar()
+        value.set(markup)
         new_price_markup = tkinter.Toplevel(self.root, bd=1)
         new_price_markup.title("Изменить наценку 10")
         new_price_markup.minsize(width=20, height=20)
-        markup_entry = tkinter.Entry(new_price_markup, width=30, bd=1, exportselection=0, textvariable=value10)
-        markup_labler = tkinter.Label(new_price_markup, text="Ввести процент наценки:")
-        ok_button = tkinter.Button(new_price_markup, text="Ok", command=lambda: self.set_price_markup10_ok(value10, new_price_markup))
-        abort_button = tkinter.Button(new_price_markup, text="Отмена", command=new_price_markup.destroy)
-        markup_labler.grid(row=0, column=1)
-        markup_entry.grid(row=1, column=1)
-        ok_button.grid(row=3, column=0)
-        abort_button.grid(row=3, column=3)
-
-    def set_price_markup10_ok(self, value10, new_price_markup):
-        """Применение введенного пользователем значения наценки 10"""
-        try:
-            self.price_markup10 = value10.get()
-            with open(str(self.data_dir_name + '/' + "markup10.dat"), 'wb') as file:
-                pickle.dump(self.price_markup10, file)
-            new_price_markup.destroy()
-            self.label_set_price_markup10.config(text="Наценка 10 = " + str(self.price_markup10) + " %")
-
-        except tkinter.TclError:
-            angry = tm.showerror(title="Ошибка!", message="Вводимое значение должно быть целым числом, без разделительных знаков.")
-
-    def cats_markup10(self):
-        """Дочернее окно выбора категорий товаров, подлежащих применению наценки 10"""
-        value = tkinter.IntVar()
-        value.set(self.price_markup10)
-        available_cats = tkinter.Toplevel(self.root, bd=1)
-        available_cats.title("Выберите категории товаров для применения к ним выбранной наценки:")
-        available_cats.minsize(width=50, height=50)
-        choose_cats = tkinter.Listbox(available_cats, selectmode="multiple", width=50, height=30)
-        xbar = tkinter.Scrollbar(available_cats, orient='horizontal', command=choose_cats.xview)
-        ybar = tkinter.Scrollbar(available_cats, orient='vertical', command=choose_cats.yview)
-        choose_cats.configure(xscrollcommand=xbar.set, yscrollcommand=ybar.set)
-
-        if self.chosen_cats_markup10_group:
-            for i in self.chosen_cats_markup10_group:
-                self.chosen_cats_markup_general_group.remove(i)
-
-            self.chosen_cats_markup10_group = []
-        if self.cats_to_die:
-
-            for i in self.invited_cats_on_markup:
-                if i not in self.chosen_cats_markup_general_group:
-                    choose_cats.insert("end", i)
-
-        if not self.cats_to_die:
-            self.invited_cats_on_markup = self.sorted_cats
-            for i in self.invited_cats_on_markup:
-                if i not in self.chosen_cats_markup_general_group:
-                    choose_cats.insert("end", i)
-
-        ok_button = tkinter.Button(available_cats, text="Ok", command=lambda: self.cats_markup10_ok(choose_cats, available_cats))
-        abort_button = tkinter.Button(available_cats, text="Отмена", command=available_cats.destroy)
-        choose_cats.grid(row=0, column=1, )
-        ok_button.grid(row=2, column=0)
-        abort_button.grid(row=2, column=4)
-        xbar.grid(row=1, column=1, rowspan=1, sticky="we")
-        ybar.grid(row=0, column=3, columnspan=1, sticky="ns")
-
-    def cats_markup10_ok(self, choose_cats, available_cats):
-        """Функция формирует список индексов категорий товаров, выбранных для применения наценки 10"""
-        y = choose_cats.curselection()
-        self.chosen_cats_markup10_group = []
-
-        for i in y:
-            self.chosen_cats_markup10_group.append(choose_cats.get(i))
-
-        for i in self.chosen_cats_markup10_group:
-            self.chosen_cats_markup_general_group.add(i)
-
-        available_cats.destroy()
-
-# 9
-    def set_price_markup9(self):
-        """Дочернее окно изменения наценки 9"""
-        value9 = tkinter.IntVar()
-        value9.set(self.price_markup9)
-        new_price_markup = tkinter.Toplevel(self.root, bd=1)
-        new_price_markup.title("Изменить наценку 9")
-        new_price_markup.minsize(width=20, height=20)
-        markup_entry = tkinter.Entry(new_price_markup, width=30, bd=1, exportselection=0, textvariable=value9)
-        markup_labler = tkinter.Label(new_price_markup, text="Ввести процент наценки:")
-        ok_button = tkinter.Button(new_price_markup, text="Ok", command=lambda: self.set_price_markup9_ok(value9, new_price_markup))
-        abort_button = tkinter.Button(new_price_markup, text="Отмена", command=new_price_markup.destroy)
-        markup_labler.grid(row=0, column=1)
-        markup_entry.grid(row=1, column=1)
-        ok_button.grid(row=3, column=0)
-        abort_button.grid(row=3, column=3)
-
-    def set_price_markup9_ok(self, value9, new_price_markup):
-        """Применение введенного пользователем значения наценки 9"""
-        try:
-            self.price_markup9 = value9.get()
-            with open(str(self.data_dir_name + '/' + "markup9.dat"), 'wb') as file:
-                pickle.dump(self.price_markup9, file)
-            new_price_markup.destroy()
-            self.label_set_price_markup9.config(text="Наценка 9 = " + str(self.price_markup9) + " %")
-
-        except tkinter.TclError:
-            angry = tm.showerror(title="Ошибка!", message="Вводимое значение должно быть целым числом, без разделительных знаков.")
-
-    def cats_markup9(self):
-        """Дочернее окно выбора категорий товаров, подлежащих применению наценки 9"""
-        value = tkinter.IntVar()
-        value.set(self.price_markup9)
-        available_cats = tkinter.Toplevel(self.root, bd=1)
-        available_cats.title("Выберите категории товаров для применения к ним выбранной наценки:")
-        available_cats.minsize(width=50, height=50)
-        choose_cats = tkinter.Listbox(available_cats, selectmode="multiple", width=50, height=30)
-        xbar = tkinter.Scrollbar(available_cats, orient='horizontal', command=choose_cats.xview)
-        ybar = tkinter.Scrollbar(available_cats, orient='vertical', command=choose_cats.yview)
-        choose_cats.configure(xscrollcommand=xbar.set, yscrollcommand=ybar.set)
-
-        if self.chosen_cats_markup9_group:
-            for i in self.chosen_cats_markup9_group:
-                self.chosen_cats_markup_general_group.remove(i)
-
-            self.chosen_cats_markup9_group = []
-
-        if self.cats_to_die:
-
-            for i in self.invited_cats_on_markup:
-                if i not in self.chosen_cats_markup_general_group:
-                    choose_cats.insert("end", i)
-
-        if not self.cats_to_die:
-            self.invited_cats_on_markup = self.sorted_cats
-            for i in self.invited_cats_on_markup:
-                if i not in self.chosen_cats_markup_general_group:
-                    choose_cats.insert("end", i)
-
-        ok_button = tkinter.Button(available_cats, text="Ok", command=lambda: self.cats_markup9_ok(choose_cats, available_cats))
-        abort_button = tkinter.Button(available_cats, text="Отмена", command=available_cats.destroy)
-        choose_cats.grid(row=0, column=1, )
-        ok_button.grid(row=2, column=0)
-        abort_button.grid(row=2, column=4)
-        xbar.grid(row=1, column=1, rowspan=1, sticky="we")
-        ybar.grid(row=0, column=3, columnspan=1, sticky="ns")
-
-    def cats_markup9_ok(self, choose_cats, available_cats):
-        """Функция формирует список индексов категорий товаров, выбранных для применения наценки 1"""
-        y = choose_cats.curselection()
-        self.chosen_cats_markup9_group = []
-
-        for i in y:
-            self.chosen_cats_markup9_group.append(choose_cats.get(i))
-
-        for i in self.chosen_cats_markup9_group:
-            self.chosen_cats_markup_general_group.add(i)
-        available_cats.destroy()
-
-# 8
-    def set_price_markup8(self):
-        """Дочернее окно изменения наценки 8"""
-        value8 = tkinter.IntVar()
-        value8.set(self.price_markup8)
-        new_price_markup = tkinter.Toplevel(self.root, bd=1)
-        new_price_markup.title("Изменить наценку 8")
-        new_price_markup.minsize(width=20, height=20)
-        markup_entry = tkinter.Entry(new_price_markup, width=30, bd=1, exportselection=0, textvariable=value8)
-        markup_labler = tkinter.Label(new_price_markup, text="Ввести процент наценки:")
-        ok_button = tkinter.Button(new_price_markup, text="Ok", command=lambda: self.set_price_markup8_ok(value8, new_price_markup))
-        abort_button = tkinter.Button(new_price_markup, text="Отмена", command=new_price_markup.destroy)
-        markup_labler.grid(row=0, column=1)
-        markup_entry.grid(row=1, column=1)
-        ok_button.grid(row=3, column=0)
-        abort_button.grid(row=3, column=3)
-
-    def set_price_markup8_ok(self, value8, new_price_markup):
-        """Применение введенного пользователем значения наценки 8"""
-        try:
-            self.price_markup8 = value8.get()
-            with open(str(self.data_dir_name + '/' + "markup8.dat"), 'wb') as file:
-                pickle.dump(self.price_markup8, file)
-            new_price_markup.destroy()
-            self.label_set_price_markup8.config(text="Наценка 8 = " + str(self.price_markup8) + " %")
-
-        except tkinter.TclError:
-            angry = tm.showerror(title="Ошибка!", message="Вводимое значение должно быть целым числом, без разделительных знаков.")
-
-    def cats_markup8(self):
-        """Дочернее окно выбора категорий товаров, подлежащих применению наценки 8"""
-        value = tkinter.IntVar()
-        value.set(self.price_markup8)
-        available_cats = tkinter.Toplevel(self.root, bd=1)
-        available_cats.title("Выберите категории товаров для применения к ним выбранной наценки:")
-        available_cats.minsize(width=50, height=50)
-        choose_cats = tkinter.Listbox(available_cats, selectmode="multiple", width=50, height=30)
-        xbar = tkinter.Scrollbar(available_cats, orient='horizontal', command=choose_cats.xview)
-        ybar = tkinter.Scrollbar(available_cats, orient='vertical', command=choose_cats.yview)
-        choose_cats.configure(xscrollcommand=xbar.set, yscrollcommand=ybar.set)
-
-        if self.chosen_cats_markup8_group:
-            for i in self.chosen_cats_markup8_group:
-                self.chosen_cats_markup_general_group.remove(i)
-            self.chosen_cats_markup8_group = []
-        if self.cats_to_die:
-
-            for i in self.invited_cats_on_markup:
-                if i not in self.chosen_cats_markup_general_group:
-                    choose_cats.insert("end", i)
-
-        if not self.cats_to_die:
-            self.invited_cats_on_markup = self.sorted_cats
-            for i in self.invited_cats_on_markup:
-                if i not in self.chosen_cats_markup_general_group:
-                    choose_cats.insert("end", i)
-
-        ok_button = tkinter.Button(available_cats, text="Ok", command=lambda: self.cats_markup8_ok(choose_cats, available_cats))
-        abort_button = tkinter.Button(available_cats, text="Отмена", command=available_cats.destroy)
-        choose_cats.grid(row=0, column=1, )
-        ok_button.grid(row=2, column=0)
-        abort_button.grid(row=2, column=4)
-        xbar.grid(row=1, column=1, rowspan=1, sticky="we")
-        ybar.grid(row=0, column=3, columnspan=1, sticky="ns")
-
-    def cats_markup8_ok(self, choose_cats, available_cats):
-        """Функция формирует список индексов категорий товаров, выбранных для применения наценки 1"""
-        y = choose_cats.curselection()
-        self.chosen_cats_markup8_group = []
-
-        for i in y:
-            self.chosen_cats_markup8_group.append(choose_cats.get(i))
-
-        for i in self.chosen_cats_markup8_group:
-            self.chosen_cats_markup_general_group.add(i)
-        available_cats.destroy()
-
-# 7
-
-    def set_price_markup7(self):
-        """Дочернее окно изменения наценки 7"""
-        value7 = tkinter.IntVar()
-        value7.set(self.price_markup7)
-        new_price_markup = tkinter.Toplevel(self.root, bd=1)
-        new_price_markup.title("Изменить наценку 7")
-        new_price_markup.minsize(width=20, height=20)
-        markup_entry = tkinter.Entry(new_price_markup, width=30, bd=1, exportselection=0, textvariable=value7)
-        markup_labler = tkinter.Label(new_price_markup, text="Ввести процент наценки:")
-        ok_button = tkinter.Button(new_price_markup, text="Ok", command=lambda: self.set_price_markup7_ok(value7, new_price_markup))
-        abort_button = tkinter.Button(new_price_markup, text="Отмена", command=new_price_markup.destroy)
-        markup_labler.grid(row=0, column=1)
-        markup_entry.grid(row=1, column=1)
-        ok_button.grid(row=3, column=0)
-        abort_button.grid(row=3, column=3)
-
-    def set_price_markup7_ok(self, value7, new_price_markup):
-        """Применение введенного пользователем значения наценки 7"""
-        try:
-            self.price_markup7 = value7.get()
-            with open(str(self.data_dir_name + '/' + "markup7.dat"), 'wb') as file:
-                pickle.dump(self.price_markup7, file)
-            new_price_markup.destroy()
-            self.label_set_price_markup7.config(text="Наценка 7 = " + str(self.price_markup7) + " %")
-
-        except tkinter.TclError:
-            angry = tm.showerror(title="Ошибка!", message="Вводимое значение должно быть целым числом, без разделительных знаков.")
-
-    def cats_markup7(self):
-        """Дочернее окно выбора категорий товаров, подлежащих применению наценки 7"""
-        value = tkinter.IntVar()
-        value.set(self.price_markup7)
-        available_cats = tkinter.Toplevel(self.root, bd=1)
-        available_cats.title("Выберите категории товаров для применения к ним выбранной наценки:")
-        available_cats.minsize(width=50, height=50)
-        choose_cats = tkinter.Listbox(available_cats, selectmode="multiple", width=50, height=30)
-        xbar = tkinter.Scrollbar(available_cats, orient='horizontal', command=choose_cats.xview)
-        ybar = tkinter.Scrollbar(available_cats, orient='vertical', command=choose_cats.yview)
-        choose_cats.configure(xscrollcommand=xbar.set, yscrollcommand=ybar.set)
-
-        if self.chosen_cats_markup7_group:
-            for i in self.chosen_cats_markup7_group:
-                self.chosen_cats_markup_general_group.remove(i)
-            self.chosen_cats_markup7_group = []
-        if self.cats_to_die:
-
-            for i in self.invited_cats_on_markup:
-                if i not in self.chosen_cats_markup_general_group:
-                    choose_cats.insert("end", i)
-
-        if not self.cats_to_die:
-            self.invited_cats_on_markup = self.sorted_cats
-            for i in self.invited_cats_on_markup:
-                if i not in self.chosen_cats_markup_general_group:
-                    choose_cats.insert("end", i)
-
-        ok_button = tkinter.Button(available_cats, text="Ok", command=lambda: self.cats_markup7_ok(choose_cats, available_cats))
-        abort_button = tkinter.Button(available_cats, text="Отмена", command=available_cats.destroy)
-        choose_cats.grid(row=0, column=1, )
-        ok_button.grid(row=2, column=0)
-        abort_button.grid(row=2, column=4)
-        xbar.grid(row=1, column=1, rowspan=1, sticky="we")
-        ybar.grid(row=0, column=3, columnspan=1, sticky="ns")
-
-    def cats_markup7_ok(self, choose_cats, available_cats):
-        """Функция формирует список индексов категорий товаров, выбранных для применения наценки 7"""
-        y = choose_cats.curselection()
-        self.chosen_cats_markup7_group = []
-
-        for i in y:
-            self.chosen_cats_markup7_group.append(choose_cats.get(i))
-
-        for i in self.chosen_cats_markup7_group:
-            self.chosen_cats_markup_general_group.add(i)
-
-        available_cats.destroy()
-
-# 6
-
-    def set_price_markup6(self):
-        """Дочернее окно изменения наценки 6"""
-        value6 = tkinter.IntVar()
-        value6.set(self.price_markup6)
-        new_price_markup = tkinter.Toplevel(self.root, bd=1)
-        new_price_markup.title("Изменить наценку 6")
-        new_price_markup.minsize(width=20, height=20)
-        markup_entry = tkinter.Entry(new_price_markup, width=30, bd=1, exportselection=0, textvariable=value6)
-        markup_labler = tkinter.Label(new_price_markup, text="Ввести процент наценки:")
-        ok_button = tkinter.Button(new_price_markup, text="Ok", command=lambda: self.set_price_markup6_ok(value6, new_price_markup))
-        abort_button = tkinter.Button(new_price_markup, text="Отмена", command=new_price_markup.destroy)
-        markup_labler.grid(row=0, column=1)
-        markup_entry.grid(row=1, column=1)
-        ok_button.grid(row=3, column=0)
-        abort_button.grid(row=3, column=3)
-
-    def set_price_markup6_ok(self, value6, new_price_markup):
-        """Применение введенного пользователем значения наценки 6"""
-        try:
-            self.price_markup6 = value6.get()
-            with open(str(self.data_dir_name + '/' + "markup6.dat"), 'wb') as file:
-                pickle.dump(self.price_markup6, file)
-            new_price_markup.destroy()
-            self.label_set_price_markup6.config(text="Наценка 6 = " + str(self.price_markup6) + " %")
-
-        except tkinter.TclError:
-            angry = tm.showerror(title="Ошибка!", message="Вводимое значение должно быть целым числом, без разделительных знаков.")
-
-    def cats_markup6(self):
-        """Дочернее окно выбора категорий товаров, подлежащих применению наценки 6"""
-        value = tkinter.IntVar()
-        value.set(self.price_markup6)
-        available_cats = tkinter.Toplevel(self.root, bd=1)
-        available_cats.title("Выберите категории товаров для применения к ним выбранной наценки:")
-        available_cats.minsize(width=50, height=50)
-        choose_cats = tkinter.Listbox(available_cats, selectmode="multiple", width=50, height=30)
-        xbar = tkinter.Scrollbar(available_cats, orient='horizontal', command=choose_cats.xview)
-        ybar = tkinter.Scrollbar(available_cats, orient='vertical', command=choose_cats.yview)
-        choose_cats.configure(xscrollcommand=xbar.set, yscrollcommand=ybar.set)
-
-        if self.chosen_cats_markup6_group:
-            for i in self.chosen_cats_markup6_group:
-                self.chosen_cats_markup_general_group.remove(i)
-            self.chosen_cats_markup6_group = []
-
-        if self.cats_to_die:
-
-            for i in self.invited_cats_on_markup:
-                if i not in self.chosen_cats_markup_general_group:
-                    choose_cats.insert("end", i)
-
-        if not self.cats_to_die:
-            self.invited_cats_on_markup = self.sorted_cats
-            for i in self.invited_cats_on_markup:
-                if i not in self.chosen_cats_markup_general_group:
-                    choose_cats.insert("end", i)
-
-        ok_button = tkinter.Button(available_cats, text="Ok", command=lambda: self.cats_markup6_ok(choose_cats, available_cats))
-        abort_button = tkinter.Button(available_cats, text="Отмена", command=available_cats.destroy)
-        choose_cats.grid(row=0, column=1, )
-        ok_button.grid(row=2, column=0)
-        abort_button.grid(row=2, column=4)
-        xbar.grid(row=1, column=1, rowspan=1, sticky="we")
-        ybar.grid(row=0, column=3, columnspan=1, sticky="ns")
-
-    def cats_markup6_ok(self, choose_cats, available_cats):
-        """Функция формирует список индексов категорий товаров, выбранных для применения наценки 6"""
-        y = choose_cats.curselection()
-        self.chosen_cats_markup6_group = []
-
-        for i in y:
-            self.chosen_cats_markup6_group.append(choose_cats.get(i))
-
-        for i in self.chosen_cats_markup6_group:
-            self.chosen_cats_markup_general_group.add(i)
-
-        available_cats.destroy()
-
-# 5
-    def set_price_markup5(self):
-        """Дочернее окно изменения наценки 5"""
-        value5 = tkinter.IntVar()
-        value5.set(self.price_markup5)
-        new_price_markup = tkinter.Toplevel(self.root, bd=1)
-        new_price_markup.title("Изменить наценку 5")
-        new_price_markup.minsize(width=20, height=20)
-        markup_entry = tkinter.Entry(new_price_markup, width=30, bd=1, exportselection=0, textvariable=value5)
-        markup_labler = tkinter.Label(new_price_markup, text="Ввести процент наценки:")
-        ok_button = tkinter.Button(new_price_markup, text="Ok", command=lambda: self.set_price_markup5_ok(value5, new_price_markup))
-        abort_button = tkinter.Button(new_price_markup, text="Отмена", command=new_price_markup.destroy)
-        markup_labler.grid(row=0, column=1)
-        markup_entry.grid(row=1, column=1)
-        ok_button.grid(row=3, column=0)
-        abort_button.grid(row=3, column=3)
-
-    def set_price_markup5_ok(self, value5, new_price_markup):
-        """Применение введенного пользователем значения наценки 5"""
-        try:
-            self.price_markup5 = value5.get()
-            with open(str(self.data_dir_name + '/' + "markup5.dat"), 'wb') as file:
-                pickle.dump(self.price_markup5, file)
-            new_price_markup.destroy()
-            self.label_set_price_markup5.config(text="Наценка 5 = " + str(self.price_markup5) + " %")
-
-        except tkinter.TclError:
-            angry = tm.showerror(title="Ошибка!", message="Вводимое значение должно быть целым числом, без разделительных знаков.")
-
-    def cats_markup5(self):
-        """Дочернее окно выбора категорий товаров, подлежащих применению наценки 5"""
-        value = tkinter.IntVar()
-        value.set(self.price_markup5)
-        available_cats = tkinter.Toplevel(self.root, bd=1)
-        available_cats.title("Выберите категории товаров для применения к ним выбранной наценки:")
-        available_cats.minsize(width=50, height=50)
-        choose_cats = tkinter.Listbox(available_cats, selectmode="multiple", width=50, height=30)
-        xbar = tkinter.Scrollbar(available_cats, orient='horizontal', command=choose_cats.xview)
-        ybar = tkinter.Scrollbar(available_cats, orient='vertical', command=choose_cats.yview)
-        choose_cats.configure(xscrollcommand=xbar.set, yscrollcommand=ybar.set)
-
-        if self.chosen_cats_markup5_group:
-            for i in self.chosen_cats_markup5_group:
-                self.chosen_cats_markup_general_group.remove(i)
-            self.chosen_cats_markup5_group = []
-
-        if self.cats_to_die:
-
-            for i in self.invited_cats_on_markup:
-                if i not in self.chosen_cats_markup_general_group:
-                    choose_cats.insert("end", i)
-
-        if not self.cats_to_die:
-            self.invited_cats_on_markup = self.sorted_cats
-            for i in self.invited_cats_on_markup:
-                if i not in self.chosen_cats_markup_general_group:
-                    choose_cats.insert("end", i)
-
-        ok_button = tkinter.Button(available_cats, text="Ok", command=lambda: self.cats_markup5_ok(choose_cats, available_cats))
-        abort_button = tkinter.Button(available_cats, text="Отмена", command=available_cats.destroy)
-        choose_cats.grid(row=0, column=1, )
-        ok_button.grid(row=2, column=0)
-        abort_button.grid(row=2, column=4)
-        xbar.grid(row=1, column=1, rowspan=1, sticky="we")
-        ybar.grid(row=0, column=3, columnspan=1, sticky="ns")
-
-    def cats_markup5_ok(self, choose_cats, available_cats):
-        """Функция формирует список индексов категорий товаров, выбранных для применения наценки 5"""
-        y = choose_cats.curselection()
-        self.chosen_cats_markup5_group = []
-
-        for i in y:
-            self.chosen_cats_markup5_group.append(choose_cats.get(i))
-
-        for i in self.chosen_cats_markup5_group:
-            self.chosen_cats_markup_general_group.add(i)
-
-        available_cats.destroy()
-
-# 4
-    def set_price_markup4(self):
-        """Дочернее окно изменения наценки 4"""
-        value4 = tkinter.IntVar()
-        value4.set(self.price_markup4)
-        new_price_markup = tkinter.Toplevel(self.root, bd=1)
-        new_price_markup.title("Изменить наценку 4")
-        new_price_markup.minsize(width=20, height=20)
-        markup_entry = tkinter.Entry(new_price_markup, width=30, bd=1, exportselection=0, textvariable=value4)
-        markup_labler = tkinter.Label(new_price_markup, text="Ввести процент наценки:")
-        ok_button = tkinter.Button(new_price_markup, text="Ok", command=lambda: self.set_price_markup4_ok(value4, new_price_markup))
-        abort_button = tkinter.Button(new_price_markup, text="Отмена", command=new_price_markup.destroy)
-        markup_labler.grid(row=0, column=1)
-        markup_entry.grid(row=1, column=1)
-        ok_button.grid(row=3, column=0)
-        abort_button.grid(row=3, column=3)
-
-    def set_price_markup4_ok(self, value4, new_price_markup):
-        """Применение введенного пользователем значения наценки 4"""
-        try:
-            self.price_markup4 = value4.get()
-            with open(str(self.data_dir_name + '/' + "markup4.dat"), 'wb') as file:
-                pickle.dump(self.price_markup4, file)
-            new_price_markup.destroy()
-            self.label_set_price_markup4.config(text="Наценка 4 = " + str(self.price_markup4) + " %")
-
-        except tkinter.TclError:
-            angry = tm.showerror(title="Ошибка!", message="Вводимое значение должно быть целым числом, без разделительных знаков.")
-
-    def cats_markup4(self):
-        """Дочернее окно выбора категорий товаров, подлежащих применению наценки 4"""
-        value = tkinter.IntVar()
-        value.set(self.price_markup4)
-        available_cats = tkinter.Toplevel(self.root, bd=1)
-        available_cats.title("Выберите категории товаров для применения к ним выбранной наценки:")
-        available_cats.minsize(width=50, height=50)
-        choose_cats = tkinter.Listbox(available_cats, selectmode="multiple", width=50, height=30)
-        xbar = tkinter.Scrollbar(available_cats, orient='horizontal', command=choose_cats.xview)
-        ybar = tkinter.Scrollbar(available_cats, orient='vertical', command=choose_cats.yview)
-        choose_cats.configure(xscrollcommand=xbar.set, yscrollcommand=ybar.set)
-
-        if self.chosen_cats_markup4_group:
-            for i in self.chosen_cats_markup4_group:
-                self.chosen_cats_markup_general_group.remove(i)
-
-            self.chosen_cats_markup4_group = []
-
-        if self.cats_to_die:
-
-            for i in self.invited_cats_on_markup:
-                if i not in self.chosen_cats_markup_general_group:
-                    choose_cats.insert("end", i)
-
-        if not self.cats_to_die:
-            self.invited_cats_on_markup = self.sorted_cats
-            for i in self.invited_cats_on_markup:
-                if i not in self.chosen_cats_markup_general_group:
-                    choose_cats.insert("end", i)
-
-        ok_button = tkinter.Button(available_cats, text="Ok", command=lambda: self.cats_markup4_ok(choose_cats, available_cats))
-        abort_button = tkinter.Button(available_cats, text="Отмена", command=available_cats.destroy)
-        choose_cats.grid(row=0, column=1, )
-        ok_button.grid(row=2, column=0)
-        abort_button.grid(row=2, column=4)
-        xbar.grid(row=1, column=1, rowspan=1, sticky="we")
-        ybar.grid(row=0, column=3, columnspan=1, sticky="ns")
-
-    def cats_markup4_ok(self, choose_cats, available_cats):
-        """Функция формирует список индексов категорий товаров, выбранных для применения наценки 4"""
-        y = choose_cats.curselection()
-        self.chosen_cats_markup4_group = []
-
-        for i in y:
-            self.chosen_cats_markup4_group.append(choose_cats.get(i))
-
-        for i in self.chosen_cats_markup4_group:
-            self.chosen_cats_markup_general_group.add(i)
-        available_cats.destroy()
-# 3
-
-    def set_price_markup3(self):
-        """Дочернее окно изменения наценки 3"""
-        value3 = tkinter.IntVar()
-        value3.set(self.price_markup3)
-        new_price_markup = tkinter.Toplevel(self.root, bd=1)
-        new_price_markup.title("Изменить наценку 3")
-        new_price_markup.minsize(width=20, height=20)
-        markup_entry = tkinter.Entry(new_price_markup, width=30, bd=1, exportselection=0, textvariable=value3)
-        markup_labler = tkinter.Label(new_price_markup, text="Ввести процент наценки:")
-        ok_button = tkinter.Button(new_price_markup, text="Ok", command=lambda: self.set_price_markup3_ok(value3, new_price_markup))
-        abort_button = tkinter.Button(new_price_markup, text="Отмена", command=new_price_markup.destroy)
-        markup_labler.grid(row=0, column=1)
-        markup_entry.grid(row=1, column=1)
-        ok_button.grid(row=3, column=0)
-        abort_button.grid(row=3, column=3)
-
-    def set_price_markup3_ok(self, value3, new_price_markup):
-        """Применение введенного пользователем значения наценки 3"""
-        try:
-            self.price_markup3 = value3.get()
-            with open(str(self.data_dir_name + '/' + "markup3.dat"), 'wb') as file:
-                pickle.dump(self.price_markup3, file)
-            new_price_markup.destroy()
-            self.label_set_price_markup3.config(text="Наценка 3 = " + str(self.price_markup3) + " %")
-
-        except tkinter.TclError:
-            angry = tm.showerror(title="Ошибка!", message="Вводимое значение должно быть целым числом, без разделительных знаков.")
-
-    def cats_markup3(self):
-        """Дочернее окно выбора категорий товаров, подлежащих применению наценки 3"""
-        value = tkinter.IntVar()
-        value.set(self.price_markup3)
-        available_cats = tkinter.Toplevel(self.root, bd=1)
-        available_cats.title("Выберите категории товаров для применения к ним выбранной наценки:")
-        available_cats.minsize(width=50, height=50)
-        choose_cats = tkinter.Listbox(available_cats, selectmode="multiple", width=50, height=30)
-        xbar = tkinter.Scrollbar(available_cats, orient='horizontal', command=choose_cats.xview)
-        ybar = tkinter.Scrollbar(available_cats, orient='vertical', command=choose_cats.yview)
-        choose_cats.configure(xscrollcommand=xbar.set, yscrollcommand=ybar.set)
-
-        if self.chosen_cats_markup3_group:
-            for i in self.chosen_cats_markup3_group:
-                self.chosen_cats_markup_general_group.remove(i)
-            self.chosen_cats_markup3_group = []
-
-        if self.cats_to_die:
-            for i in self.invited_cats_on_markup:
-                if i not in self.chosen_cats_markup_general_group:
-                    choose_cats.insert("end", i)
-
-        if not self.cats_to_die:
-            self.invited_cats_on_markup = self.sorted_cats
-            for i in self.invited_cats_on_markup:
-                if i not in self.chosen_cats_markup_general_group:
-                    choose_cats.insert("end", i)
-
-        ok_button = tkinter.Button(available_cats, text="Ok", command=lambda: self.cats_markup3_ok(choose_cats, available_cats))
-        abort_button = tkinter.Button(available_cats, text="Отмена", command=available_cats.destroy)
-        choose_cats.grid(row=0, column=1, )
-        ok_button.grid(row=2, column=0)
-        abort_button.grid(row=2, column=4)
-        xbar.grid(row=1, column=1, rowspan=1, sticky="we")
-        ybar.grid(row=0, column=3, columnspan=1, sticky="ns")
-
-    def cats_markup3_ok(self, choose_cats, available_cats):
-        """Функция формирует список индексов категорий товаров, выбранных для применения наценки 1"""
-        y = choose_cats.curselection()
-        self.chosen_cats_markup3_group = []
-
-        for i in y:
-            self.chosen_cats_markup3_group.append(choose_cats.get(i))
-
-        for i in self.chosen_cats_markup3_group:
-            self.chosen_cats_markup_general_group.add(i)
-        available_cats.destroy()
-
-# 2
-
-    def set_price_markup2(self):
-        """Дочернее окно изменения наценки 2"""
-        value2 = tkinter.IntVar()
-        value2.set(self.price_markup2)
-        new_price_markup = tkinter.Toplevel(self.root, bd=1)
-        new_price_markup.title("Изменить наценку 2")
-        new_price_markup.minsize(width=20, height=20)
-        markup_entry = tkinter.Entry(new_price_markup, width=30, bd=1, exportselection=0, textvariable=value2)
-        markup_labler = tkinter.Label(new_price_markup, text="Ввести процент наценки:")
-        ok_button = tkinter.Button(new_price_markup, text="Ok", command=lambda: self.set_price_markup2_ok(value2, new_price_markup))
-        abort_button = tkinter.Button(new_price_markup, text="Отмена", command=new_price_markup.destroy)
-        markup_labler.grid(row=0, column=1)
-        markup_entry.grid(row=1, column=1)
-        ok_button.grid(row=3, column=0)
-        abort_button.grid(row=3, column=3)
-
-    def set_price_markup2_ok(self, value2, new_price_markup):
-        """Применение введенного пользователем значения наценки 2"""
-        try:
-            self.price_markup2 = value2.get()
-            with open(str(self.data_dir_name + '/' + "markup2.dat"), 'wb') as file:
-                pickle.dump(self.price_markup2, file)
-            new_price_markup.destroy()
-            self.label_set_price_markup2.config(text="Наценка 2 = " + str(self.price_markup2) + " %")
-
-        except tkinter.TclError:
-            angry = tm.showerror(title="Ошибка!", message="Вводимое значение должно быть целым числом, без разделительных знаков.")
-
-    def cats_markup2(self):
-        """Дочернее окно выбора категорий товаров, подлежащих применению наценки 2"""
-        value = tkinter.IntVar()
-        value.set(self.price_markup2)
-        available_cats = tkinter.Toplevel(self.root, bd=1)
-        available_cats.title("Выберите категории товаров для применения к ним выбранной наценки:")
-        available_cats.minsize(width=50, height=50)
-        choose_cats = tkinter.Listbox(available_cats, selectmode="multiple", width=50, height=30)
-        xbar = tkinter.Scrollbar(available_cats, orient='horizontal', command=choose_cats.xview)
-        ybar = tkinter.Scrollbar(available_cats, orient='vertical', command=choose_cats.yview)
-        choose_cats.configure(xscrollcommand=xbar.set, yscrollcommand=ybar.set)
-
-        if self.chosen_cats_markup2_group:
-            for i in self.chosen_cats_markup2_group:
-                self.chosen_cats_markup_general_group.remove(i)
-            self.chosen_cats_markup2_group = []
-
-        if self.cats_to_die:
-
-            for i in self.invited_cats_on_markup:
-                if i not in self.chosen_cats_markup_general_group:
-                    choose_cats.insert("end", i)
-
-        if not self.cats_to_die:
-            self.invited_cats_on_markup = self.sorted_cats
-            for i in self.invited_cats_on_markup:
-                if i not in self.chosen_cats_markup_general_group:
-                    choose_cats.insert("end", i)
-
-        ok_button = tkinter.Button(available_cats, text="Ok", command=lambda: self.cats_markup2_ok(choose_cats, available_cats))
-        abort_button = tkinter.Button(available_cats, text="Отмена", command=available_cats.destroy)
-        choose_cats.grid(row=0, column=1, )
-        ok_button.grid(row=2, column=0)
-        abort_button.grid(row=2, column=4)
-        xbar.grid(row=1, column=1, rowspan=1, sticky="we")
-        ybar.grid(row=0, column=3, columnspan=1, sticky="ns")
-
-    def cats_markup2_ok(self, choose_cats, available_cats):
-        """Функция формирует список индексов категорий товаров, выбранных для применения наценки 1"""
-        y = choose_cats.curselection()
-        self.chosen_cats_markup2_group = []
-
-        for i in y:
-            self.chosen_cats_markup2_group.append(choose_cats.get(i))
-
-        for i in self.chosen_cats_markup2_group:
-            self.chosen_cats_markup_general_group.add(i)
-        available_cats.destroy()
-# 1
-
-    def set_price_markup1(self):
-        """Дочернее окно изменения наценки 1"""
-        value = tkinter.IntVar()
-        value.set(self.price_markup1)
-        new_price_markup = tkinter.Toplevel(self.root, bd=1)
-        new_price_markup.title("Изменить наценку 1")
-        new_price_markup.minsize(width=20, height=20)
         markup_entry = tkinter.Entry(new_price_markup, width=30, bd=1, exportselection=0, textvariable=value)
         markup_labler = tkinter.Label(new_price_markup, text="Ввести процент наценки:")
-        ok_button = tkinter.Button(new_price_markup, text="Ok", command=lambda: self.set_price_markup1_ok(value, new_price_markup))
+        ok_button = tkinter.Button(new_price_markup, text="Ok",
+                                   command=lambda: self.set_price_markup_util_ok(value, new_price_markup, markup, label))
         abort_button = tkinter.Button(new_price_markup, text="Отмена", command=new_price_markup.destroy)
         markup_labler.grid(row=0, column=1)
         markup_entry.grid(row=1, column=1)
         ok_button.grid(row=3, column=0)
         abort_button.grid(row=3, column=3)
 
-    def set_price_markup1_ok(self, value, new_price_markup):
-        """Применение введенного пользователем значения наценки 1"""
+    def set_price_markup_util_ok(self, value, new_price_markup, markup, label):
+        """Применение введенного пользователем значения наценки"""
         try:
-            self.price_markup1 = value.get()
-            with open(str(self.data_dir_name + '/' + "markup1.dat"), 'wb') as file:
-                pickle.dump(self.price_markup1, file)
+            markup = value.get()
             new_price_markup.destroy()
-            self.label_set_price_markup1.config(text="Наценка 1 = " + str(self.price_markup1) + " %")
+            if label == self.label_set_price_markup1:
+                label.config(text="Наценка 1 = " + str(markup) + " %")
+                with open(str(self.data_dir_name + '/' + "markup1.dat"), 'wb') as file:
+                    pickle.dump(markup, file)
+            elif label == self.label_set_price_markup2:
+                label.config(text="Наценка 2 = " + str(markup) + " %")
+                with open(str(self.data_dir_name + '/' + "markup2.dat"), 'wb') as file:
+                    pickle.dump(markup, file)
+            elif label == self.label_set_price_markup3:
+                label.config(text="Наценка 3 = " + str(markup) + " %")
+                with open(str(self.data_dir_name + '/' + "markup3.dat"), 'wb') as file:
+                    pickle.dump(markup, file)
+            elif label == self.label_set_price_markup4:
+                label.config(text="Наценка 4 = " + str(markup) + " %")
+                with open(str(self.data_dir_name + '/' + "markup4.dat"), 'wb') as file:
+                    pickle.dump(markup, file)
+            elif label == self.label_set_price_markup5:
+                label.config(text="Наценка 5 = " + str(markup) + " %")
+                with open(str(self.data_dir_name + '/' + "markup5.dat"), 'wb') as file:
+                    pickle.dump(markup, file)
+            elif label == self.label_set_price_markup6:
+                label.config(text="Наценка 6 = " + str(markup) + " %")
+                with open(str(self.data_dir_name + '/' + "markup6.dat"), 'wb') as file:
+                    pickle.dump(markup, file)
+            elif label == self.label_set_price_markup7:
+                label.config(text="Наценка 7 = " + str(markup) + " %")
+                with open(str(self.data_dir_name + '/' + "markup7.dat"), 'wb') as file:
+                    pickle.dump(markup, file)
+            elif label == self.label_set_price_markup8:
+                label.config(text="Наценка 8 = " + str(markup) + " %")
+                with open(str(self.data_dir_name + '/' + "markup8.dat"), 'wb') as file:
+                    pickle.dump(markup, file)
+            elif label == self.label_set_price_markup9:
+                label.config(text="Наценка 9 = " + str(markup) + " %")
+                with open(str(self.data_dir_name + '/' + "markup9.dat"), 'wb') as file:
+                    pickle.dump(markup, file)
+            elif label == self.label_set_price_markup10:
+                label.config(text="Наценка 10 = " + str(markup) + " %")
+                with open(str(self.data_dir_name + '/' + "markup10.dat"), 'wb') as file:
+                    pickle.dump(markup, file)
 
         except tkinter.TclError:
-            angry = tm.showerror(title="Ошибка!", message="Вводимое значение должно быть целым числом, без разделительных знаков.")
+            angry = tm.showerror(title="Ошибка!", message="Вводимое значение должно быть целым числом, "
+                                                          "без разделительных знаков.")
 
-    def cats_markup1(self):
-        """Дочернее окно выбора категорий товаров, подлежащих применению наценки 1"""
-        value = tkinter.StringVar()
-        value.set(self.price_markup1)
+    def cats_markup_util(self, any_list):
+        """Дочернее окно выбора категорий товаров, подлежащих применению наценки"""
+        value = tkinter.IntVar()
+        value.set(any_list)
         available_cats = tkinter.Toplevel(self.root, bd=1)
         available_cats.title("Выберите категории товаров для применения к ним выбранной наценки:")
         available_cats.minsize(width=50, height=50)
@@ -1119,11 +489,11 @@ class CsvParser:
         ybar = tkinter.Scrollbar(available_cats, orient='vertical', command=choose_cats.yview)
         choose_cats.configure(xscrollcommand=xbar.set, yscrollcommand=ybar.set)
 
-        if self.chosen_cats_markup1_group:
-            for i in self.chosen_cats_markup1_group:
+        if any_list:
+            for i in any_list:
                 self.chosen_cats_markup_general_group.remove(i)
-            self.chosen_cats_markup1_group = []
 
+            any_list = []
         if self.cats_to_die:
 
             for i in self.invited_cats_on_markup:
@@ -1136,7 +506,7 @@ class CsvParser:
                 if i not in self.chosen_cats_markup_general_group:
                     choose_cats.insert("end", i)
 
-        ok_button = tkinter.Button(available_cats, text="Ok", command=lambda: self.cats_markup1_ok(choose_cats, available_cats))
+        ok_button = tkinter.Button(available_cats, text="Ok", command=lambda: self.cats_markup_util_ok(choose_cats, available_cats, any_list))
         abort_button = tkinter.Button(available_cats, text="Отмена", command=available_cats.destroy)
         choose_cats.grid(row=0, column=1, )
         ok_button.grid(row=2, column=0)
@@ -1144,44 +514,50 @@ class CsvParser:
         xbar.grid(row=1, column=1, rowspan=1, sticky="we")
         ybar.grid(row=0, column=3, columnspan=1, sticky="ns")
 
-    def cats_markup1_ok(self, choose_cats, available_cats):
-        """Функция формирует список индексов категорий товаров, выбранных для применения наценки 1"""
+    def cats_markup_util_ok(self, choose_cats, available_cats, any_list):
+        """Функция формирует список индексов категорий товаров, выбранных для применения наценки"""
         y = choose_cats.curselection()
-        self.chosen_cats_markup1_group = []
-        for i in y:
-            self.chosen_cats_markup1_group.append(choose_cats.get(i))
+        any_list = []
 
-        for i in self.chosen_cats_markup1_group:
+        for i in y:
+            any_list.append(choose_cats.get(i))
+
+        for i in any_list:
             self.chosen_cats_markup_general_group.add(i)
 
         available_cats.destroy()
 
     def cats_catcher(self):
         """Дочернее окно выбора категорий товаров, подлежащих удалению"""
-        value = tkinter.DoubleVar()
-        value.set(self.convertation_cource)
-        available_cats = tkinter.Toplevel(self.root, bd=1)
-        available_cats.title("Выберите лишние категории товаров:")
-        available_cats.minsize(width=50, height=50)
-        choose_cats = tkinter.Listbox(available_cats, selectmode="multiple", width=50, height=30)
-        xbar = tkinter.Scrollbar(available_cats, orient='horizontal', command=choose_cats.xview)
-        ybar = tkinter.Scrollbar(available_cats, orient='vertical', command=choose_cats.yview)
-        choose_cats.configure(xscrollcommand=xbar.set, yscrollcommand=ybar.set)
-        if self.cats_to_die:
-            self.cats_to_die = []
-        if self.invited_cats_on_markup:
-            self.invited_cats_on_markup = set()
-        for i in self.sorted_cats:
-            if i not in self.cats_to_die:
-                choose_cats.insert("end", i)
+        if self.xlsx_bool:
+            angry = tm.showerror(title="Внимание!",
+                                 message="В папке с исполняемым файлом обнаружен файл соответствия групп товаров, "
+                                         "возможность удалять категори вручную отключена.")
+        else:
+            value = tkinter.DoubleVar()
+            value.set(self.convertation_cource)
+            available_cats = tkinter.Toplevel(self.root, bd=1)
+            available_cats.title("Выберите лишние категории товаров:")
+            available_cats.minsize(width=50, height=50)
+            choose_cats = tkinter.Listbox(available_cats, selectmode="multiple", width=50, height=30)
+            xbar = tkinter.Scrollbar(available_cats, orient='horizontal', command=choose_cats.xview)
+            ybar = tkinter.Scrollbar(available_cats, orient='vertical', command=choose_cats.yview)
+            choose_cats.configure(xscrollcommand=xbar.set, yscrollcommand=ybar.set)
+            if self.cats_to_die:
+                self.cats_to_die = []
+            if self.invited_cats_on_markup:
+                self.invited_cats_on_markup = set()
+            for i in self.sorted_cats:
+                if i not in self.cats_to_die:
+                    choose_cats.insert("end", i)
 
-        ok_button = tkinter.Button(available_cats, text="Ok", command=lambda: self.cats_hanging(choose_cats, available_cats))
-        abort_button = tkinter.Button(available_cats, text="Отмена", command=available_cats.destroy)
-        choose_cats.grid(row=0, column=1, )
-        ok_button.grid(row=2, column=0)
-        abort_button.grid(row=2, column=4)
-        xbar.grid(row=1, column=1, rowspan=1, sticky="we")
-        ybar.grid(row=0, column=3, columnspan=1, sticky="ns")
+            ok_button = tkinter.Button(available_cats, text="Ok", command=lambda: self.cats_hanging(choose_cats, available_cats))
+            abort_button = tkinter.Button(available_cats, text="Отмена", command=available_cats.destroy)
+            choose_cats.grid(row=0, column=1, )
+            ok_button.grid(row=2, column=0)
+            abort_button.grid(row=2, column=4)
+            xbar.grid(row=1, column=1, rowspan=1, sticky="we")
+            ybar.grid(row=0, column=3, columnspan=1, sticky="ns")
 
     def cats_hanging(self, choose_cats, available_cats):
         """Функция формирует список индексов выбранных для удаления категорий товаров"""
@@ -1194,6 +570,7 @@ class CsvParser:
 
         for i in self.sorted_cats:
             if i not in self.cats_to_die:
+                print(i)
                 self.invited_cats_on_markup.add(i)
         available_cats.destroy()
 
@@ -1360,7 +737,8 @@ class CsvParser:
             self.label_con_course.config(text="Курс RUB к EUR:" + str(self.convertation_cource))
 
         except tkinter.TclError:
-            angry = tm.showerror(title="Ошибка!", message="Вводимое значение должно содержать арабские цифры и точку в качестве разделителя.")
+            angry = tm.showerror(title="Ошибка!",
+                                 message="Вводимое значение должно содержать арабские цифры и точку в качестве разделителя.")
 
     def reader(self, path):
         csv.register_dialect('orion', delimiter=';', quoting=csv.QUOTE_ALL)
@@ -1372,12 +750,32 @@ class CsvParser:
                     self.cats.append(line['category_path'])
                     self.cats_id.append(line['category'])
             except KeyError:
-                anger = tm.showerror(title="Ошибка!", message="Прочитанный файл возможно ошибочен и не соответствует требуемой структуре данных."
+                anger = tm.showerror(title="Ошибка!",
+                                     message="Прочитанный файл возможно ошибочен и не соответствует требуемой структуре данных."
                                                               "\n Удостоверьтесь, что входной файл корректен.")
-
         self.sorted_cats = list(set(self.cats))
-
         self.sorted_cats_id = list(set(self.cats_id))
+        if self.xlsx_bool:
+            csv.register_dialect('g_c_c', delimiter=",", quoting=csv.QUOTE_NONE)
+            xlsx_csv_path = str(self.osdir + "/" + self.data_dir_name + "/" + 'group_codes_correspondence.csv')
+            with open(xlsx_csv_path, 'r', encoding='utf-8', newline='') as file2:
+                reader2 = csv.DictReader(file2, dialect='g_c_c', skipinitialspace=True)
+
+                for line in reader2:
+                    if line['name']:
+                        self.xlsx_list.append(line)
+                        self.xlsx_id.add(line['orn'])
+            other = set()
+            another_other = set()
+
+            for line in self.buffer:
+                if line['category'] not in self.xlsx_id:
+
+                    other.add(line['category_path'])
+                else:
+                    another_other.add(line['category_path'])
+            self.cats_to_die = list(other)
+            self.invited_cats_on_markup = another_other
 
     def buffer_handler(self):
         if self.cats_to_die:
@@ -1456,6 +854,27 @@ class CsvParser:
             self.serpentis_iter3()
 
     def serpentis_iter3(self):
+            if self.xlsx_bool:
+                self.keys_to_kill = ['export_version', 'current_version', 'timestamp', 'product_class',
+                                     'product_name_DE',
+                                     'title_DE', 'title_EN', 'title_IT', 'product_keyword', 'special_price_flag',
+                                     'recommended_selling_price', 'full_text_DE', 'full_text_IT',
+                                     'category_path', 'group_product', 'single_image', 'tax_id', 'ean_code',
+                                     'battery_supply', 'battery_combination', 'product_image_2', 'product_image_3',
+                                     'product_image_4',
+                                     'material_description', 'material_thickness', 'total_length', 'diameter', 'weight',
+                                     'length',
+                                     'width', 'height', 'contents', 'availability', 'delivery_week', 'dress_size',
+                                     'shoe_size',
+                                     'main_color', 'color_description', 'battery_type', 'packaging_size', 'aroma',
+                                     'isbn', 'number_of_pages',
+                                     'total_duration', 'hardcore_flag', 'age_rating', 'product_languages',
+                                     'country_of_origin_code',
+                                     'series_name', 'reference_quantity', 'reference_price_factor',
+                                     'promotional_packing', 'product_icons',
+                                     'selling_unit', 'voc_percentage', 'barcode', 'barcode_type',
+                                     'food_information_flag',
+                                     'detailed_full_text_de', 'detailed_full_text_en', 'group_id', 'tariff_number']
             for row in self.rows:
                 for i in self.keys_to_kill:
                     if i in row.keys():
@@ -1468,7 +887,14 @@ class CsvParser:
                 row['pre_order : Предзаказ'] = 0
                 row['article : Артикул'] = row.pop('product_id')
                 row['code_1c : 1C'] = ''
-                row['folder : Категория'] = ''
+                if self.xlsx_bool:
+                    if row['category'] in self.xlsx_id:
+                        for n in self.xlsx_list:
+                            if n['orn'] == row['category']:
+                                row['folder : Категория'] = n['descr']
+                        row.pop('category')
+                else:
+                    row['folder : Категория'] = ''
                 row['tags : Теги'] = ''
                 row['hidden : Скрыто'] = 0
                 row['kind_id : ID'] = ''
@@ -1524,7 +950,7 @@ class CsvParser:
             self.final_msg = tm.showinfo(title="Готово.", message=("Результат обработки сохранен в  " + self.output))
 
     def check_dirs(self):
-        """функция призвана создавать список каталогов, для хранения служебных данных, относительно текущего каталога,
+        """метод призван создавать список каталогов, для хранения служебных данных, относительно текущего каталога,
         в котором выполняется"""
         if not os.path.isdir(str(self.osdir) + self.data_dir_name):
             try:
@@ -1537,11 +963,22 @@ class CsvParser:
             except FileExistsError:
                 pass
 
+    def xlsx_to_csv(self):
+        if os.path.isfile(str(self.osdir) + "/" + "соответствие кодов групп.xlsx"):
+            self.xlsx_bool = True
+            print(self.xlsx_bool)
+            xlsx_workbook = xlrd.open_workbook('соответствие кодов групп.xlsx')
+            xlsx_file = xlsx_workbook.sheet_by_name('Лист1')
+            g_c_c_path = str(self.osdir + "/" + self.data_dir_name + "/" + 'group_codes_correspondence.csv')
+            with open(g_c_c_path, 'w', encoding='utf8', newline='') as file:
+                writer = csv.writer(file, quoting=csv.QUOTE_NONE, escapechar='\\')
+                for rownum in range(xlsx_file.nrows):
+                    writer.writerow(xlsx_file.row_values(rownum))
+
 
 snake = CsvParser()
 snake.check_dirs()
+snake.xlsx_to_csv()
 snake.set_last_params()
 snake.draw_me()
-
-
 
