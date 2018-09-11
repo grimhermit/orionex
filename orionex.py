@@ -412,10 +412,10 @@ class CsvParser:
 
     def set_price_markup_util(self, markup, label):
         """Дочернее окно изменения наценки"""
-        value = tkinter.IntVar()
+        value = tkinter.DoubleVar()
         value.set(markup)
         new_price_markup = tkinter.Toplevel(self.root, bd=1)
-        new_price_markup.title("Изменить наценку 10")
+        new_price_markup.title("Изменить наценку")
         new_price_markup.minsize(width=20, height=20)
         markup_entry = tkinter.Entry(new_price_markup, width=30, bd=1, exportselection=0, textvariable=value)
         markup_labler = tkinter.Label(new_price_markup, text="Ввести процент наценки:")
@@ -474,8 +474,9 @@ class CsvParser:
                     pickle.dump(markup, file)
 
         except tkinter.TclError:
-            angry = tm.showerror(title="Ошибка!", message="Вводимое значение должно быть целым числом, "
-                                                          "без разделительных знаков.")
+            angry = tm.showerror(title="Ошибка!", message="Вводимое значение должно быть числом с плавающей точкой "
+                                                          "(десятичной дробью), "
+                                                          "с точкой, как разделительным знаком.")
 
     def cats_markup_util(self, any_list):
         """Дочернее окно выбора категорий товаров, подлежащих применению наценки"""
@@ -812,43 +813,43 @@ class CsvParser:
                 if self.price_markup1:
                     if row['category_path'] in self.chosen_cats_markup1_group:
                         markuped_price1 = float(row['product_price'])
-                        row['product_price'] = float(round(markuped_price1 + self.price_markup1 * markuped_price1 / 100))
+                        row['product_price'] = float(round(markuped_price1 + self.price_markup1 * markuped_price1))
                 if self.price_markup2:
                     if row['category_path'] in self.chosen_cats_markup2_group:
                         markuped_price2 = float(row['product_price'])
-                        row['product_price'] = float(round(markuped_price2 + self.price_markup2 * markuped_price2 / 100))
+                        row['product_price'] = float(round(markuped_price2 + self.price_markup2 * markuped_price2))
                 if self.price_markup3:
                     if row['category_path'] in self.chosen_cats_markup3_group:
                         markuped_price3 = float(row['product_price'])
-                        row['product_price'] = float(round(markuped_price3 + self.price_markup3 * markuped_price3 / 100))
+                        row['product_price'] = float(round(markuped_price3 + self.price_markup3 * markuped_price3))
                 if self.price_markup4:
                     if row['category_path'] in self.chosen_cats_markup4_group:
                         markuped_price4 = float(row['product_price'])
-                        row['product_price'] = float(round(markuped_price4 + self.price_markup4 * markuped_price4 / 100))
+                        row['product_price'] = float(round(markuped_price4 + self.price_markup4 * markuped_price4))
                 if self.price_markup5:
                     if row['category_path'] in self.chosen_cats_markup5_group:
                         markuped_price5 = float(row['product_price'])
-                        row['product_price'] = float(round(markuped_price5 + self.price_markup5 * markuped_price5 / 100))
+                        row['product_price'] = float(round(markuped_price5 + self.price_markup5 * markuped_price5))
                 if self.price_markup6:
                     if row['category_path'] in self.chosen_cats_markup6_group:
                         markuped_price6 = float(row['product_price'])
-                        row['product_price'] = float(round(markuped_price6 + self.price_markup6 * markuped_price6 / 100))
+                        row['product_price'] = float(round(markuped_price6 + self.price_markup6 * markuped_price6))
                 if self.price_markup7:
                     if row['category_path'] in self.chosen_cats_markup7_group:
                         markuped_price7 = float(row['product_price'])
-                        row['product_price'] = float(round(markuped_price7 + self.price_markup7 * markuped_price7 / 100))
+                        row['product_price'] = float(round(markuped_price7 + self.price_markup7 * markuped_price7))
                 if self.price_markup8:
                     if row['category_path'] in self.chosen_cats_markup8_group:
                         markuped_price8 = float(row['product_price'])
-                        row['product_price'] = float(round(markuped_price8 + self.price_markup8 * markuped_price8 / 100))
+                        row['product_price'] = float(round(markuped_price8 + self.price_markup8 * markuped_price8))
                 if self.price_markup9:
                     if row['category_path'] in self.chosen_cats_markup9_group:
                         markuped_price9 = float(row['product_price'])
-                        row['product_price'] = float(round(markuped_price9 + self.price_markup9 * markuped_price9 / 100))
+                        row['product_price'] = float(round(markuped_price9 + self.price_markup9 * markuped_price9))
                 if self.price_markup10:
                     if row['category_path'] in self.chosen_cats_markup10_group:
                         markuped_price10 = float(row['product_price'])
-                        row['product_price'] = float(round(markuped_price10 + self.price_markup10 * markuped_price10 / 100))
+                        row['product_price'] = float(round(markuped_price10 + self.price_markup10 * markuped_price10))
                 self.rows.append(row)
             self.buffer3 = []
             self.serpentis_iter3()
@@ -885,7 +886,7 @@ class CsvParser:
                 row['image : Иллюстрация'] = row.pop('product_image_1')
                 row['supplier : Поставщик'] = 'orion.de'
                 row['pre_order : Предзаказ'] = 0
-                row['article : Артикул'] = row.pop('product_id')
+                row['article : Артикул'] = str(row.pop('product_id'))
                 row['code_1c : 1C'] = ''
                 if self.xlsx_bool:
                     if row['category'] in self.xlsx_id:
@@ -910,9 +911,16 @@ class CsvParser:
                 row['new : Новинка'] = row.pop('novelty_flag')
                 row['special : Спецпредложение'] = 0
                 row['yml : Yandex.Market'] = 0
-                row['price : Цена'] = row.pop('product_price')
-                row['price_old : Старая цена'] = row['price : Цена']
-                row['price2 : Цена 2'] = row['price : Цена']
+
+                row['price_old : Старая цена'] = row.pop('product_price')
+                if str(row['article : Артикул'][0]) == '2' or str(row['article : Артикул'][0]) == '0' \
+                        and str(row['article : Артикул'][1]) == '2':
+                    row['price : Цена'] = round(float(row['price_old : Старая цена'] - (
+                            25 * (row['price_old : Старая цена']) / 100)))
+                else:
+                    row['price : Цена'] = round(float(row['price_old : Старая цена'] - (
+                            10 * (row['price_old : Старая цена']) / 100)))
+                row['price2 : Цена 2'] = row['price_old : Старая цена']
                 row['price3 : Цена 3'] = float(0.00)
                 row['currency : Валюта'] = 'RUB'
                 row['seo_noindex : Индексация'] = 0
@@ -981,4 +989,3 @@ snake.check_dirs()
 snake.xlsx_to_csv()
 snake.set_last_params()
 snake.draw_me()
-
