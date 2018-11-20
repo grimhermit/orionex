@@ -813,14 +813,10 @@ class CsvParser:
     def serpentis_iter2(self):
             for row in self.buffer3:
                 if self.price_markup1:
-                    print(self.chosen_cats_markup1_group)
+
                     if row['category_path'] in self.chosen_cats_markup1_group:
                         markuped_price1 = float(row['product_price'])
-                        print("markuped_price1", markuped_price1)
                         row['product_price'] = float(round(markuped_price1 + self.price_markup1 * markuped_price1))
-                        print('product_price', row['product_price'])
-                    else:
-                        print("Это баг!!!")
                 if self.price_markup2:
                     if row['category_path'] in self.chosen_cats_markup2_group:
                         markuped_price2 = float(row['product_price'])
